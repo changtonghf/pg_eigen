@@ -1,0 +1,9 @@
+CREATE FUNCTION array_reduce(text, float4[], int[]) RETURNS float4[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
+
+CREATE FUNCTION array_reduce(text, float8[], int[]) RETURNS float8[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
+
+CREATE FUNCTION array_reduce(text, int2[],   int[]) RETURNS int2[]   AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
+
+CREATE FUNCTION array_reduce(text, int4[],   int[]) RETURNS int4[]   AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
+
+CREATE FUNCTION array_reduce(text, int8[],   int[]) RETURNS int8[]   AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;

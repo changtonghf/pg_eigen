@@ -1,0 +1,6 @@
+# pg_eigen extension
+comment = 'SQL library for linear algebra algorithms'
+default_version = '1.0'
+module_pathname = '$libdir/pg_eigen'
+relocatable = false
+trusted = false
