@@ -91,6 +91,11 @@ Datum array_reduce(PG_FUNCTION_ARGS)
                 m3++;
             }
         }
+        if (m3 == 0)
+        {
+            m3 = 1;
+            x[0] = 1;
+        }
     }
 
     if (t1 == FLOAT4OID)
