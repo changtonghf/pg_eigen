@@ -415,3 +415,161 @@ extern "C" void pg_tensor_reduce(unsigned int oid,unsigned int fn,char* in,unsig
         }
     }
 }
+
+template<typename T,int L,unsigned int M,unsigned int R,unsigned int D>
+void tensor_rfft(T* in,unsigned int* d1,T* out,unsigned int* d2)
+{
+    Eigen::array<unsigned int, M> m;
+    for (unsigned int i=0;i < M;i++) m[i] = d1[i];
+    Eigen::TensorMap<Eigen::Tensor<T, M, L>> x(in, m);
+    Eigen::array<unsigned int, M> f;
+    for (unsigned int i=0;i < M;i++) f[i] = d2[i];
+    Eigen::Tensor<std::complex<T>, M, L> y = x.template fft<R, D>(f);
+    for (Eigen::DenseIndex i=0;i < y.size();i++)
+    {
+        out[2*i] = y(i).real();
+        out[2*i+1] = y(i).imag();
+    }
+}
+
+template<typename T,int L,unsigned int M,unsigned int R,unsigned int D>
+void tensor_fft(std::complex<T>* in,unsigned int* d1,T* out,unsigned int* d2)
+{
+    Eigen::array<unsigned int, M> m;
+    for (unsigned int i=0;i < M;i++) m[i] = d1[i];
+    Eigen::TensorMap<Eigen::Tensor<std::complex<T>, M, L>> x(in, m);
+    Eigen::array<unsigned int, M> f;
+    for (unsigned int i=0;i < M;i++) f[i] = d2[i];
+    Eigen::Tensor<std::complex<T>, M, L> y = x.template fft<R, D>(f);
+    for (Eigen::DenseIndex i=0;i < y.size();i++)
+    {
+        out[2*i] = y(i).real();
+        out[2*i+1] = y(i).imag();
+    }
+}
+
+extern "C" void pg_tensor_fft(unsigned int oid,bool forward,char* in,unsigned int n1,unsigned int* d1,void* out,unsigned int n2,unsigned int* d2)
+{
+    if (forward)
+    {
+        if (n1 == n2)
+        {
+            if (oid == 700)
+            {
+                if (n1 == 1)
+                    tensor_rfft<float, Eigen::RowMajor, 1, Eigen::BothParts, Eigen::FFT_FORWARD>((float *)in, d1, (float *)out, d2);
+                else if (n1 == 2)
+                    tensor_rfft<float, Eigen::RowMajor, 2, Eigen::BothParts, Eigen::FFT_FORWARD>((float *)in, d1, (float *)out, d2);
+                else if (n1 == 3)
+                    tensor_rfft<float, Eigen::RowMajor, 3, Eigen::BothParts, Eigen::FFT_FORWARD>((float *)in, d1, (float *)out, d2);
+                else if (n1 == 4)
+                    tensor_rfft<float, Eigen::RowMajor, 4, Eigen::BothParts, Eigen::FFT_FORWARD>((float *)in, d1, (float *)out, d2);
+                else if (n1 == 5)
+                    tensor_rfft<float, Eigen::RowMajor, 5, Eigen::BothParts, Eigen::FFT_FORWARD>((float *)in, d1, (float *)out, d2);
+            }
+            else if (oid == 701)
+            {
+                if (n1 == 1)
+                    tensor_rfft<double, Eigen::RowMajor, 1, Eigen::BothParts, Eigen::FFT_FORWARD>((double *)in, d1, (double *)out, d2);
+                else if (n1 == 2)
+                    tensor_rfft<double, Eigen::RowMajor, 2, Eigen::BothParts, Eigen::FFT_FORWARD>((double *)in, d1, (double *)out, d2);
+                else if (n1 == 3)
+                    tensor_rfft<double, Eigen::RowMajor, 3, Eigen::BothParts, Eigen::FFT_FORWARD>((double *)in, d1, (double *)out, d2);
+                else if (n1 == 4)
+                    tensor_rfft<double, Eigen::RowMajor, 4, Eigen::BothParts, Eigen::FFT_FORWARD>((double *)in, d1, (double *)out, d2);
+                else if (n1 == 5)
+                    tensor_rfft<double, Eigen::RowMajor, 5, Eigen::BothParts, Eigen::FFT_FORWARD>((double *)in, d1, (double *)out, d2);
+            }
+        }
+        else if (n1 == n2 + 1)
+        {
+            if (oid == 700)
+            {
+                if (n1 == 2)
+                    tensor_fft<float, Eigen::RowMajor, 1, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<float> *)in, d1, (float *)out, d2);
+                else if (n1 == 3)
+                    tensor_fft<float, Eigen::RowMajor, 2, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<float> *)in, d1, (float *)out, d2);
+                else if (n1 == 4)
+                    tensor_fft<float, Eigen::RowMajor, 3, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<float> *)in, d1, (float *)out, d2);
+                else if (n1 == 5)
+                    tensor_fft<float, Eigen::RowMajor, 4, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<float> *)in, d1, (float *)out, d2);
+                else if (n1 == 6)
+                    tensor_fft<float, Eigen::RowMajor, 5, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<float> *)in, d1, (float *)out, d2);
+            }
+            else if (oid == 701)
+            {
+                if (n1 == 2)
+                    tensor_fft<double, Eigen::RowMajor, 1, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<double> *)in, d1, (double *)out, d2);
+                else if (n1 == 3)
+                    tensor_fft<double, Eigen::RowMajor, 2, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<double> *)in, d1, (double *)out, d2);
+                else if (n1 == 4)
+                    tensor_fft<double, Eigen::RowMajor, 3, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<double> *)in, d1, (double *)out, d2);
+                else if (n1 == 5)
+                    tensor_fft<double, Eigen::RowMajor, 4, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<double> *)in, d1, (double *)out, d2);
+                else if (n1 == 6)
+                    tensor_fft<double, Eigen::RowMajor, 5, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<double> *)in, d1, (double *)out, d2);
+            }
+        }
+    }
+    else
+    {
+        if (n1 == n2)
+        {
+            if (oid == 700)
+            {
+                if (n1 == 1)
+                    tensor_rfft<float, Eigen::RowMajor, 1, Eigen::BothParts, Eigen::FFT_REVERSE>((float *)in, d1, (float *)out, d2);
+                else if (n1 == 2)
+                    tensor_rfft<float, Eigen::RowMajor, 2, Eigen::BothParts, Eigen::FFT_REVERSE>((float *)in, d1, (float *)out, d2);
+                else if (n1 == 3)
+                    tensor_rfft<float, Eigen::RowMajor, 3, Eigen::BothParts, Eigen::FFT_REVERSE>((float *)in, d1, (float *)out, d2);
+                else if (n1 == 4)
+                    tensor_rfft<float, Eigen::RowMajor, 4, Eigen::BothParts, Eigen::FFT_REVERSE>((float *)in, d1, (float *)out, d2);
+                else if (n1 == 5)
+                    tensor_rfft<float, Eigen::RowMajor, 5, Eigen::BothParts, Eigen::FFT_REVERSE>((float *)in, d1, (float *)out, d2);
+            }
+            else if (oid == 701)
+            {
+                if (n1 == 1)
+                    tensor_rfft<double, Eigen::RowMajor, 1, Eigen::BothParts, Eigen::FFT_REVERSE>((double *)in, d1, (double *)out, d2);
+                else if (n1 == 2)
+                    tensor_rfft<double, Eigen::RowMajor, 2, Eigen::BothParts, Eigen::FFT_REVERSE>((double *)in, d1, (double *)out, d2);
+                else if (n1 == 3)
+                    tensor_rfft<double, Eigen::RowMajor, 3, Eigen::BothParts, Eigen::FFT_REVERSE>((double *)in, d1, (double *)out, d2);
+                else if (n1 == 4)
+                    tensor_rfft<double, Eigen::RowMajor, 4, Eigen::BothParts, Eigen::FFT_REVERSE>((double *)in, d1, (double *)out, d2);
+                else if (n1 == 5)
+                    tensor_rfft<double, Eigen::RowMajor, 5, Eigen::BothParts, Eigen::FFT_REVERSE>((double *)in, d1, (double *)out, d2);
+            }
+        }
+        else if (n1 == n2 + 1)
+        {
+            if (oid == 700)
+            {
+                if (n1 == 2)
+                    tensor_fft<float, Eigen::RowMajor, 1, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<float> *)in, d1, (float *)out, d2);
+                else if (n1 == 3)
+                    tensor_fft<float, Eigen::RowMajor, 2, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<float> *)in, d1, (float *)out, d2);
+                else if (n1 == 4)
+                    tensor_fft<float, Eigen::RowMajor, 3, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<float> *)in, d1, (float *)out, d2);
+                else if (n1 == 5)
+                    tensor_fft<float, Eigen::RowMajor, 4, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<float> *)in, d1, (float *)out, d2);
+                else if (n1 == 6)
+                    tensor_fft<float, Eigen::RowMajor, 5, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<float> *)in, d1, (float *)out, d2);
+            }
+            else if (oid == 701)
+            {
+                if (n1 == 2)
+                    tensor_fft<double, Eigen::RowMajor, 1, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<double> *)in, d1, (double *)out, d2);
+                else if (n1 == 3)
+                    tensor_fft<double, Eigen::RowMajor, 2, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<double> *)in, d1, (double *)out, d2);
+                else if (n1 == 4)
+                    tensor_fft<double, Eigen::RowMajor, 3, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<double> *)in, d1, (double *)out, d2);
+                else if (n1 == 5)
+                    tensor_fft<double, Eigen::RowMajor, 4, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<double> *)in, d1, (double *)out, d2);
+                else if (n1 == 6)
+                    tensor_fft<double, Eigen::RowMajor, 5, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<double> *)in, d1, (double *)out, d2);
+            }
+        }
+    }
+}
