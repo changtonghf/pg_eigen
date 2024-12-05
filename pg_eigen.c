@@ -214,7 +214,7 @@ Datum array_fft(PG_FUNCTION_ARGS)
     c2 = ArrayGetNItems(n2, d2);
     if (n1 != c2 && n1 != c2 + 1)
         elog(ERROR, "the length of the third argument should be either equal to or one less than the dimension of the second argument.");
-    if (n1 == c2 + 1 && d1[n1] != 2)
+    if (n1 == c2 + 1 && d1[n1-1] != 2)
         elog(ERROR, "the second argument's last dimension should only have two elements representing a complex.");
     p2 = (uint32 *)ARR_DATA_PTR(a2);
     for (uint32 i=0;i < c2;i++)
