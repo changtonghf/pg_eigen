@@ -573,3 +573,38 @@ extern "C" void pg_tensor_fft(unsigned int oid,bool forward,char* in,unsigned in
         }
     }
 }
+
+extern "C" void pg_tensor_random(unsigned int fn,unsigned int num,double* out,double a1,double b1)
+{
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    if (fn == 1)
+    {
+        std::normal_distribution<double> nd(a1, b1);
+        for (unsigned int i = 0; i < num; ++i)
+            out[i] = nd(gen);
+    }
+    else if (fn == 2)
+    {
+        double lb = a1 - 2 * b1, ub = a1 + 2 * b1;
+        std::normal_distribution<double> td(a1, b1);
+        for (unsigned int i = 0; i < num; ++i)
+        {
+            double tmp;
+            do { tmp = td(gen); } while (tmp < lb || tmp > ub);
+            out[i] = tmp;
+        }
+    }
+    else if (fn == 3)
+    {
+        std::uniform_real_distribution<double> ud(a1, b1);
+        for (unsigned int i = 0; i < num; ++i)
+            out[i] = ud(gen);
+    }
+    else if (fn == 4)
+    {
+        std::gamma_distribution<double> gd(a1, b1);
+        for (unsigned int i = 0; i < num; ++i)
+            out[i] = gd(gen);
+    }
+}
