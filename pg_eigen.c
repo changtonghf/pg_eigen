@@ -14,10 +14,12 @@ PG_MODULE_MAGIC;
 extern void pg_tensor_reduce(unsigned int oid,unsigned int fn,char* in,unsigned int n1,unsigned int* d1,void* out,unsigned int n2,unsigned int* d2);
 extern void pg_tensor_fft(unsigned int oid,bool forward,char* in,unsigned int n1,unsigned int* d1,void* out,unsigned int n2,unsigned int* d2);
 extern void pg_tensor_random(unsigned int fn,unsigned int num,double* out,double a1,double b1);
+extern void pg_tensor_shuffle(unsigned int oid,unsigned int step, unsigned int num,void* out);
 
 PG_FUNCTION_INFO_V1(array_reduce);
 PG_FUNCTION_INFO_V1(array_fft);
 PG_FUNCTION_INFO_V1(array_random);
+PG_FUNCTION_INFO_V1(array_shuffle);
 
 Datum array_reduce(PG_FUNCTION_ARGS)
 {
@@ -349,4 +351,36 @@ Datum array_random(PG_FUNCTION_ARGS)
     pfree(b2);
     pfree(d2);
     PG_RETURN_ARRAYTYPE_P(a2);
+}
+
+Datum array_shuffle(PG_FUNCTION_ARGS)
+{
+    ArrayType *a1;
+    char      *p1;
+    Oid        t1;
+    int        n1, *d1, c1, d2, s2;
+
+    if (PG_ARGISNULL(0))
+        PG_RETURN_NULL();
+    a1 = PG_GETARG_ARRAYTYPE_P(0);
+    t1 = ARR_ELEMTYPE(a1);
+    if (t1 != INT2OID && t1 != INT4OID && t1 != INT8OID && t1 != FLOAT4OID && t1 != FLOAT8OID)
+        elog(ERROR, "the second array argument type must be number type.");
+    n1 = ARR_NDIM(a1);
+    d1 = ARR_DIMS(a1);
+    c1 = ArrayGetNItems(n1, d1);
+    p1 = ARR_DATA_PTR(a1);
+    if (PG_ARGISNULL(1))
+        d2 = n1;
+    else
+        d2 = PG_GETARG_INT32(1);
+    if (d2 > n1)
+        elog(ERROR, "the second argument should be either equal to or one less than the dimension of the first argument.");
+    s2 = c1;
+    if (d2 != n1)
+    {
+        for (uint32 i=0;i < d2;i++) s2 /= d1[i];
+    }
+    pg_tensor_shuffle(t1, s2, c1, (void*) p1);
+    PG_RETURN_ARRAYTYPE_P(a1);
 }

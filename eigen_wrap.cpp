@@ -608,3 +608,48 @@ extern "C" void pg_tensor_random(unsigned int fn,unsigned int num,double* out,do
             out[i] = gd(gen);
     }
 }
+
+extern "C" void pg_tensor_shuffle(unsigned int oid,unsigned int step, unsigned int num,void* out)
+{
+    std::default_random_engine r{std::random_device{}()};
+    if (oid == 700)
+    {
+        for (unsigned int i = 0;(i * step) < num;i++)
+        {
+            std::shuffle((float*)out, (float*)out + step, r);
+            out = (float*)out + step;
+        }
+    }
+    else if (oid == 701)
+    {
+        for (unsigned int i = 0;(i * step) < num;i++)
+        {
+            std::shuffle((double*)out, (double*)out + step, r);
+            out = (double*)out + step;
+        }
+    }
+    else if (oid ==  21)
+    {
+        for (unsigned int i = 0;(i * step) < num;i++)
+        {
+            std::shuffle((short*)out, (short*)out + step, r);
+            out = (short*)out + step;
+        }
+    }
+    else if (oid ==  23)
+    {
+        for (unsigned int i = 0;(i * step) < num;i++)
+        {
+            std::shuffle((int*)out, (int*)out + step, r);
+            out = (int*)out + step;
+        }
+    }
+    else if (oid ==  20)
+    {
+        for (unsigned int i = 0;(i * step) < num;i++)
+        {
+            std::shuffle((long*)out, (long*)out + step, r);
+            out = (long*)out + step;
+        }
+    }
+}
