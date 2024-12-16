@@ -12,4 +12,4 @@ CREATE FUNCTION array_fft(boolean, float4[], int[]) RETURNS float4[] AS 'MODULE_
 
 CREATE FUNCTION array_fft(boolean, float8[], int[]) RETURNS float8[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
 
-CREATE FUNCTION array_random(text, int4[], float8, float8) RETURNS float8[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
+CREATE FUNCTION array_random(text, int4[], float8, float8) RETURNS float8[] AS 'MODULE_PATHNAME' LANGUAGE C;
