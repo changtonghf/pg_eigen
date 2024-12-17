@@ -14,12 +14,14 @@ PG_MODULE_MAGIC;
 extern void pg_tensor_reduce(unsigned int oid,unsigned int fn,char* in,unsigned int n1,unsigned int* d1,void* out,unsigned int n2,unsigned int* d2);
 extern void pg_tensor_fft(unsigned int oid,bool forward,char* in,unsigned int n1,unsigned int* d1,void* out,unsigned int n2,unsigned int* d2);
 extern void pg_tensor_random(unsigned int fn,unsigned int num,double* out,double a1,double b1);
-extern void pg_tensor_shuffle(unsigned int oid,unsigned int step, unsigned int num,void* out);
+extern void pg_tensor_shuffle(unsigned int oid,unsigned int step,unsigned int num,void* out);
+extern void pg_tensor_calc(unsigned int oid,unsigned int fn,unsigned int num,void* a1,void* a2);
 
 PG_FUNCTION_INFO_V1(array_reduce);
 PG_FUNCTION_INFO_V1(array_fft);
 PG_FUNCTION_INFO_V1(array_random);
 PG_FUNCTION_INFO_V1(array_shuffle);
+PG_FUNCTION_INFO_V1(array_calc);
 
 Datum array_reduce(PG_FUNCTION_ARGS)
 {
@@ -382,5 +384,54 @@ Datum array_shuffle(PG_FUNCTION_ARGS)
         for (uint32 i=0;i < d2;i++) s2 /= d1[i];
     }
     pg_tensor_shuffle(t1, s2, c1, (void*) p1);
+    PG_RETURN_ARRAYTYPE_P(a1);
+}
+
+Datum array_calc(PG_FUNCTION_ARGS)
+{
+    ArrayType *a1, *a2;
+    char      *fn, *p1, *p2;
+    Oid        t1,  t2;
+    int        n1,  n2, c1, *d1, *d2;
+
+    if (PG_ARGISNULL(0))
+        elog(ERROR, "calculate function name not specified.");
+    fn = text_to_cstring(PG_GETARG_TEXT_P(0));
+    if (strcasecmp(fn, "add") != 0 && strcasecmp(fn, "sub") != 0 && strcasecmp(fn, "mul") != 0 && strcasecmp(fn, "div") != 0)
+        elog(ERROR, "\"%s\" is currently not supported in tensor broadcasting calculation.", fn);
+    if (PG_ARGISNULL(1)) PG_RETURN_NULL();
+    if (PG_ARGISNULL(2)) PG_RETURN_NULL();
+    a1 = PG_GETARG_ARRAYTYPE_P(1);
+    t1 = ARR_ELEMTYPE(a1);
+    if (t1 != INT2OID && t1 != INT4OID && t1 != INT8OID && t1 != FLOAT4OID && t1 != FLOAT8OID)
+        elog(ERROR, "array argument type must be number type.");
+    n1 = ARR_NDIM(a1);
+    d1 = ARR_DIMS(a1);
+    c1 = ArrayGetNItems(n1, d1);
+    a2 = PG_GETARG_ARRAYTYPE_P(2);
+    t2 = ARR_ELEMTYPE(a2);
+    if (t1 != t2)
+        elog(ERROR, "array argument type must be same currently.");
+    n2 = ARR_NDIM(a2);
+    d2 = ARR_DIMS(a2);
+    if (n1 != n2)
+        elog(ERROR, "array argument dimension must be same.");
+    for (uint32 i=0;i < n1;i++)
+    {
+        if (d1[i] != d2[i])
+            elog(ERROR, "array argument dimension must be same.");
+    }
+    p1 = ARR_DATA_PTR(a1);
+    p2 = ARR_DATA_PTR(a2);
+
+    if (strcasecmp(fn, "add") == 0)
+        pg_tensor_calc(t1, 1, c1, (void*) p1, (void*) p2);
+    else if (strcasecmp(fn, "sub") == 0)
+        pg_tensor_calc(t1, 2, c1, (void*) p1, (void*) p2);
+    else if (strcasecmp(fn, "mul") == 0)
+        pg_tensor_calc(t1, 3, c1, (void*) p1, (void*) p2);
+    else if (strcasecmp(fn, "div") == 0)
+        pg_tensor_calc(t1, 4, c1, (void*) p1, (void*) p2);
+
     PG_RETURN_ARRAYTYPE_P(a1);
 }
