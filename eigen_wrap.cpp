@@ -682,3 +682,66 @@ extern "C" void pg_tensor_calc(unsigned int oid,unsigned int fn,unsigned int num
     else if (oid ==  20)
         tensor_unaryop<long, Eigen::RowMajor>(fn, num, (long*) a1, (long*) a2);
 }
+
+template<typename T,int L,unsigned int M>
+void tensor_convolve(T* i1,unsigned int* d1,T* k2,unsigned int* d2,unsigned int* s3,unsigned int* p4,T* o5,unsigned int* d5)
+{
+    Eigen::array<unsigned int, M> m;
+    for (unsigned int i=0;i < M;i++) m[i] = d1[i];
+    Eigen::TensorMap<Eigen::Tensor<T, M, L>> in(i1, m);
+    Eigen::array<unsigned int, M> n;
+    for (unsigned int i=0;i < M;i++) n[i] = d2[i];
+    Eigen::TensorMap<Eigen::Tensor<T, M, L>> kr(k2, n);
+    Eigen::array<std::pair<ptrdiff_t, ptrdiff_t>, M-1> pd;
+    for (unsigned int i=0;i < M-1;i++)
+        pd[i] = std::make_pair((ptrdiff_t)p4[2*i],(ptrdiff_t)p4[2*i+1]);
+    Eigen::array<ptrdiff_t, M-1> cd;
+    for (unsigned int i=0;i < M-1;i++) cd[i] = i;
+    Eigen::array<ptrdiff_t, M-1> st;
+    if (s3 == NULL)
+        for (unsigned int i=0;i < M-1;i++) st[i] = 1;
+    else
+        for (unsigned int i=0;i < M-1;i++) st[i] = s3[i];
+    Eigen::array<unsigned int, M-2> x;
+    for (unsigned int i=0;i < M-2;i++) x[i] = d5[i+1];
+    Eigen::array<unsigned int, M> z;
+    z[0] = d5[0];z[1] = d5[M-1];
+    for (unsigned int i=2;i < M;i++) z[i] = d5[i-1];
+    Eigen::TensorMap<Eigen::Tensor<T, M, L>> ot(o5, z);
+    for (int i = 0; i < in.dimension(0); i++)
+    {
+        for (int j = 0; j < kr.dimension(M-1); j++)
+        {
+            Eigen::Tensor<T, M-1, L> o1 = in.template chip<0>(i).pad(pd).convolve(kr.template chip<M-1>(j), cd).stride(st);
+            Eigen::TensorMap<Eigen::Tensor<T, M-2, L>> o2(o1.data(), x);
+            (ot.template chip<0>(i)).template chip<0>(j) = o2;
+        }
+    }
+    Eigen::DSizes<Eigen::DenseIndex, M> si;
+    si[0] = 0;si[M-1] = 1;
+    for (unsigned int i=1;i < M-1;i++) si[i] = i+1;
+    Eigen::Tensor<T, M, L> fo = ot.shuffle(si);
+    std::copy(fo.data(), fo.data() + fo.size(), o5);
+}
+
+extern "C" void pg_tensor_convolve(unsigned int oid,void* i1,unsigned int n1,unsigned int* d1,void* k2,unsigned int* d2,unsigned int* s3,unsigned int* p4,void* o5,unsigned int* d5)
+{
+    if (oid == 700)
+    {
+        if (n1 == 3)
+            tensor_convolve<float, Eigen::RowMajor, 3>((float*) i1, d1, (float*) k2, d2, s3, p4, (float*) o5, d5);
+        else if (n1 == 4)
+            tensor_convolve<float, Eigen::RowMajor, 4>((float*) i1, d1, (float*) k2, d2, s3, p4, (float*) o5, d5);
+        else if (n1 == 5)
+            tensor_convolve<float, Eigen::RowMajor, 5>((float*) i1, d1, (float*) k2, d2, s3, p4, (float*) o5, d5);
+    }
+    else if (oid == 701)
+    {
+        if (n1 == 3)
+            tensor_convolve<double, Eigen::RowMajor, 3>((double*) i1, d1, (double*) k2, d2, s3, p4, (double*) o5, d5);
+        else if (n1 == 4)
+            tensor_convolve<double, Eigen::RowMajor, 4>((double*) i1, d1, (double*) k2, d2, s3, p4, (double*) o5, d5);
+        else if (n1 == 5)
+            tensor_convolve<double, Eigen::RowMajor, 5>((double*) i1, d1, (double*) k2, d2, s3, p4, (double*) o5, d5);
+    }
+}

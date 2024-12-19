@@ -16,12 +16,14 @@ extern void pg_tensor_fft(unsigned int oid,bool forward,char* in,unsigned int n1
 extern void pg_tensor_random(unsigned int fn,unsigned int num,double* out,double a1,double b1);
 extern void pg_tensor_shuffle(unsigned int oid,unsigned int step,unsigned int num,void* out);
 extern void pg_tensor_calc(unsigned int oid,unsigned int fn,unsigned int num,void* a1,void* a2);
+extern void pg_tensor_convolve(unsigned int oid,void* i1,unsigned int n1,unsigned int* d1,void* k2,unsigned int* d2,unsigned int* s3,unsigned int* p4,void* o5,unsigned int* d5);
 
 PG_FUNCTION_INFO_V1(array_reduce);
 PG_FUNCTION_INFO_V1(array_fft);
 PG_FUNCTION_INFO_V1(array_random);
 PG_FUNCTION_INFO_V1(array_shuffle);
 PG_FUNCTION_INFO_V1(array_calc);
+PG_FUNCTION_INFO_V1(array_convolve);
 
 Datum array_reduce(PG_FUNCTION_ARGS)
 {
@@ -434,4 +436,184 @@ Datum array_calc(PG_FUNCTION_ARGS)
         pg_tensor_calc(t1, 4, c1, (void*) p1, (void*) p2);
 
     PG_RETURN_ARRAYTYPE_P(a1);
+}
+
+Datum array_convolve(PG_FUNCTION_ARGS)
+{
+    ArrayType *a1, *a2, *a3, *a5;
+    char      *df, *pd, *p1, *p2, *p3;
+    void      *p5;
+    Oid        t1,  t2;
+    int        n1, *d1, n2, *d2, n3, *d3, c3, c4, *p4;
+    int        n5, *d5, *b5, c5 = 1, l5, s[6] = {0,0,0,0,0,0};
+    instr_time s1,  s2;
+
+    if (PG_ARGISNULL(0))
+        elog(ERROR, "data format not specified.");
+    df = text_to_cstring(PG_GETARG_TEXT_P(0));
+    if (strcasecmp(df, "NWC") != 0 && strcasecmp(df, "NHWC") != 0 && strcasecmp(df, "NDHWC") != 0)
+        elog(ERROR, "\"%s\" is not supported in tensor convolution input.", df);
+    if (PG_ARGISNULL(1)) PG_RETURN_NULL();
+    if (PG_ARGISNULL(2))
+        elog(ERROR, "convolution kernel not specified.");
+    a1 = PG_GETARG_ARRAYTYPE_P(1);
+    a2 = PG_GETARG_ARRAYTYPE_P(2);
+    if (PG_ARGISNULL(3))
+    {
+        a3 = NULL;
+        n3 = 0;
+        d3 = NULL;
+        p3 = NULL;
+    }
+    else
+    {
+        a3 = PG_GETARG_ARRAYTYPE_P(3);
+        n3 = ARR_NDIM(a3);
+        if (n3 > 1) elog(ERROR, "strides shape must be one dimension.");
+        d3 = ARR_DIMS(a3);
+        c3 = ArrayGetNItems(n3, d3);
+        p3 = ARR_DATA_PTR(a3);
+    }
+    if (PG_ARGISNULL(4))
+        elog(ERROR, "padding type not specified.");
+    else
+    {
+        pd = text_to_cstring(PG_GETARG_TEXT_P(4));
+        if (strcasecmp(pd, "SAME") != 0 && strcasecmp(pd, "VALID") != 0)
+            elog(ERROR, "\"%s\" is not supported in tensor convolution padding.", pd);
+    }
+    t1 = ARR_ELEMTYPE(a1);
+    if (t1 != FLOAT4OID && t1 != FLOAT8OID)
+        elog(ERROR, "input argument type must be float array type.");
+    t2 = ARR_ELEMTYPE(a2);
+    if (t2 != FLOAT4OID && t2 != FLOAT8OID)
+        elog(ERROR, "kernel argument type must be float array type.");
+    n1 = ARR_NDIM(a1);
+    d1 = ARR_DIMS(a1);
+    n2 = ARR_NDIM(a2);
+    d2 = ARR_DIMS(a2);
+    p1 = ARR_DATA_PTR(a1);
+    p2 = ARR_DATA_PTR(a2);
+    s[0] = d1[0];
+    for (uint32 i=0;i < n1-1;i++)
+    {
+        if (((int32*)p3)[i] <= 0 || ((int32*)p3)[i] > d1[i+1])
+            elog(ERROR, "strides shape does not meet conv3d operation.");
+    }
+    if (strcasecmp(df, "NWC") == 0)
+    {
+        if (n1 != 3 || n2 != 3 || d2[0] > d1[1] || d2[1] != d1[2])
+            elog(ERROR, "input or kernel shape does not meet conv1d operation.");
+        if (a3 != NULL && c3 != 2)
+            elog(ERROR, "strides shape does not meet conv1d operation.");
+        if (strcasecmp(pd, "SAME") == 0)
+        {
+            s[1] = d1[1];
+            c4 = 4;
+            p4 = (int *) palloc0(c4 * sizeof(int));
+            p4[0] = (d2[0] - 1) / 2;
+            p4[1] = ((d2[0] - 1) / 2) + ((d2[0] - 1) % 2);
+        }
+        else
+        {
+            s[1] = d1[1] + d2[0] - 1;
+            c4 = 0;
+            p4 = NULL;
+        }
+        s[2] = d2[2];
+        n5 = 3;
+    }
+    else if (strcasecmp(df, "NHWC") == 0)
+    {
+        if (n1 != 4 || n2 != 4 || d2[0] > d1[1] || d2[1] > d1[2] || d2[2] != d1[3])
+            elog(ERROR, "input or kernel shape does not meet conv2d operation.");
+        if (a3 != NULL && c3 != 3)
+            elog(ERROR, "strides shape does not meet conv2d operation.");
+        if (strcasecmp(pd, "SAME") == 0)
+        {
+            for (uint32 i=1;i < 3;i++) s[i] = d1[i];
+            c4 = 6;
+            p4 = (int *) palloc0(c4 * sizeof(int));
+            for (uint32 i=0;i < 2;i++)
+            {
+                p4[2*i] = (d2[i] - 1) / 2;
+                p4[2*i+1] = ((d2[i] - 1) / 2) + ((d2[i] - 1) % 2);
+            }
+        }
+        else
+        {
+            for (uint32 i=1;i < 3;i++) s[i] = d1[i] + d2[i-1] - 1;
+            c4 = 0;
+            p4 = NULL;
+        }
+        s[3] = d2[3];
+        n5 = 4;
+    }
+    else if (strcasecmp(df, "NDHWC") == 0)
+    {
+        if (n1 != 5 || n2 != 5 || d2[0] > d1[1] || d2[1] > d1[2] || d2[2] > d1[3] || d2[3] != d1[4])
+            elog(ERROR, "input or kernel shape does not meet conv3d operation.");
+        if (a3 != NULL && c3 != 4)
+            elog(ERROR, "strides shape does not meet conv3d operation.");
+        if (strcasecmp(pd, "SAME") == 0)
+        {
+            for (uint32 i=1;i < 4;i++) s[i] = d1[i];
+            c4 = 8;
+            p4 = (int *) palloc0(c4 * sizeof(int));
+            for (uint32 i=0;i < 3;i++)
+            {
+                p4[2*i] = (d2[i] - 1) / 2;
+                p4[2*i+1] = ((d2[i] - 1) / 2) + ((d2[i] - 1) % 2);
+            }
+        }
+        else
+        {
+            for (uint32 i=1;i < 4;i++) s[i] = d1[i] + d2[i-1] - 1;
+            c4 = 0;
+            p4 = NULL;
+        }
+        s[4] = d2[4];
+        n5 = 5;
+    }
+    d5 = (int *) palloc(n5 * sizeof(int));
+    b5 = (int *) palloc(n5 * sizeof(int));
+    for (uint32 i=0;i < n5;i++)
+    {
+        d5[i] = s[i];
+        b5[i] = 1;
+        c5 *= s[i];
+    }
+    if (t1 == FLOAT4OID)
+    {
+        p5 = palloc(c5 * sizeof(float4));
+        l5 = c5 * sizeof(float4) + ARR_OVERHEAD_NONULLS(n5);
+    }
+    else if (t1 == FLOAT8OID)
+    {
+        p5 = palloc(c5 * sizeof(float8));
+        l5 = c5 * sizeof(float8) + ARR_OVERHEAD_NONULLS(n5);
+    }
+
+    INSTR_TIME_SET_CURRENT(s1);
+    pg_tensor_convolve(t1, (void*) p1, n1, (unsigned int*)d1, (void*) p2, (unsigned int*)d2, (unsigned int*) p3, (unsigned int*) p4, (void*) p5, (unsigned int*)d5);
+    INSTR_TIME_SET_CURRENT(s2);
+    INSTR_TIME_SUBTRACT(s2,s1);
+    ereport(LOG,(errmsg("eigen convolution spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));
+
+    a5 = (ArrayType *) palloc0(l5);
+    SET_VARSIZE(a5, l5);
+    a5->ndim = n5;
+    a5->dataoffset = 0;
+    a5->elemtype = t1;
+    memcpy(ARR_DIMS(a5)  , d5, n5 * sizeof(int));
+    memcpy(ARR_LBOUND(a5), b5, n5 * sizeof(int));
+    if (t1 == FLOAT4OID)
+        memcpy(ARR_DATA_PTR(a5), p5, c5 * sizeof(float4));
+    else if (t1 == FLOAT8OID)
+        memcpy(ARR_DATA_PTR(a5), p5, c5 * sizeof(float8));
+    pfree(p5);
+    pfree(d5);
+    pfree(b5);
+    pfree(p4);
+    PG_RETURN_ARRAYTYPE_P(a5);
 }
