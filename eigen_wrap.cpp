@@ -693,8 +693,16 @@ void tensor_convolve(T* i1,unsigned int* d1,T* k2,unsigned int* d2,unsigned int*
     for (unsigned int i=0;i < M;i++) n[i] = d2[i];
     Eigen::TensorMap<Eigen::Tensor<T, M, L>> kr(k2, n);
     Eigen::array<std::pair<ptrdiff_t, ptrdiff_t>, M-1> pd;
-    for (unsigned int i=0;i < M-1;i++)
-        pd[i] = std::make_pair((ptrdiff_t)p4[2*i],(ptrdiff_t)p4[2*i+1]);
+    if (p4 == NULL)
+    {
+        for (unsigned int i=0;i < M-1;i++)
+            pd[i] = std::make_pair((ptrdiff_t)0,(ptrdiff_t)0);
+    }
+    else
+    {
+        for (unsigned int i=0;i < M-1;i++)
+            pd[i] = std::make_pair((ptrdiff_t)p4[2*i],(ptrdiff_t)p4[2*i+1]);
+    }
     Eigen::array<ptrdiff_t, M-1> cd;
     for (unsigned int i=0;i < M-1;i++) cd[i] = i;
     Eigen::array<ptrdiff_t, M-1> st;
