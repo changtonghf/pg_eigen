@@ -17,6 +17,7 @@ extern void pg_tensor_random(unsigned int fn,unsigned int num,double* out,double
 extern void pg_tensor_shuffle(unsigned int oid,unsigned int step,unsigned int num,void* out);
 extern void pg_tensor_calc(unsigned int oid,unsigned int fn,unsigned int num,void* a1,void* a2);
 extern void pg_tensor_convolve(unsigned int oid,void* i1,unsigned int n1,unsigned int* d1,void* k2,unsigned int* d2,unsigned int* s3,unsigned int* p4,void* o5,unsigned int* d5);
+extern void pg_tensor_pool(unsigned int oid,unsigned int fn,void* i1,unsigned int n1,unsigned int* d1,unsigned int* k2,unsigned int* s3,unsigned int* p4,void* o5,unsigned int* d5);
 
 PG_FUNCTION_INFO_V1(array_reduce);
 PG_FUNCTION_INFO_V1(array_fft);
@@ -24,6 +25,7 @@ PG_FUNCTION_INFO_V1(array_random);
 PG_FUNCTION_INFO_V1(array_shuffle);
 PG_FUNCTION_INFO_V1(array_calc);
 PG_FUNCTION_INFO_V1(array_convolve);
+PG_FUNCTION_INFO_V1(array_pool);
 
 Datum array_reduce(PG_FUNCTION_ARGS)
 {
@@ -597,6 +599,187 @@ Datum array_convolve(PG_FUNCTION_ARGS)
     INSTR_TIME_SET_CURRENT(s2);
     INSTR_TIME_SUBTRACT(s2,s1);
     ereport(LOG,(errmsg("eigen convolution spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));
+
+    a5 = (ArrayType *) palloc0(l5);
+    SET_VARSIZE(a5, l5);
+    a5->ndim = n5;
+    a5->dataoffset = 0;
+    a5->elemtype = t1;
+    memcpy(ARR_DIMS(a5)  , d5, n5 * sizeof(int));
+    memcpy(ARR_LBOUND(a5), b5, n5 * sizeof(int));
+    if (t1 == FLOAT4OID)
+        memcpy(ARR_DATA_PTR(a5), p5, c5 * sizeof(float4));
+    else if (t1 == FLOAT8OID)
+        memcpy(ARR_DATA_PTR(a5), p5, c5 * sizeof(float8));
+    pfree(p5);
+    pfree(d5);
+    pfree(b5);
+    if (p4 != NULL) pfree(p4);
+    PG_RETURN_ARRAYTYPE_P(a5);
+}
+
+Datum array_pool(PG_FUNCTION_ARGS)
+{
+    ArrayType *a1, *a2, *a3, *a5;
+    char      *fn, *df, *pd, *p1;
+    int32     *p2, *p3;
+    void      *p5;
+    Oid        t1;
+    int        n1, *d1, n2, *d2, c2, n3, *d3, c3, c4, *p4;
+    int        n5, *d5, *b5, c5 = 1, l5, s[6] = {0,0,0,0,0,0};
+    instr_time s1,  s2;
+
+    if (PG_ARGISNULL(0))
+        elog(ERROR, "pooling function name not specified.");
+    fn = text_to_cstring(PG_GETARG_TEXT_P(0));
+    if (strcasecmp(fn, "max") != 0 && strcasecmp(fn, "avg") != 0)
+        elog(ERROR, "\"%s\" is currently not supported in tensor pooling.", fn);
+    if (PG_ARGISNULL(1))
+        elog(ERROR, "data format not specified.");
+    df = text_to_cstring(PG_GETARG_TEXT_P(1));
+    if (strcasecmp(df, "NWC") != 0 && strcasecmp(df, "NHWC") != 0 && strcasecmp(df, "NDHWC") != 0)
+        elog(ERROR, "\"%s\" is not supported in tensor pooling input.", df);
+    if (PG_ARGISNULL(2)) PG_RETURN_NULL();
+    if (PG_ARGISNULL(3))
+        elog(ERROR, "pooling kernel sizes not specified.");
+    a1 = PG_GETARG_ARRAYTYPE_P(2);
+    a2 = PG_GETARG_ARRAYTYPE_P(3);
+    n1 = ARR_NDIM(a1);
+    d1 = ARR_DIMS(a1);
+    n2 = ARR_NDIM(a2);
+    if (n2 != 1) elog(ERROR, "ksize shape must be one dimension.");
+    d2 = ARR_DIMS(a2);
+    p1 = ARR_DATA_PTR(a1);
+    p2 = (int32 *) ARR_DATA_PTR(a2);
+    c2 = ArrayGetNItems(n2, d2);
+    if (PG_ARGISNULL(4))
+    {
+        a3 = NULL;
+        n3 = 0;
+        d3 = NULL;
+        p3 = NULL;
+    }
+    else
+    {
+        a3 = PG_GETARG_ARRAYTYPE_P(4);
+        n3 = ARR_NDIM(a3);
+        if (n3 != 1) elog(ERROR, "strides shape must be one dimension.");
+        d3 = ARR_DIMS(a3);
+        c3 = ArrayGetNItems(n3, d3);
+        p3 = (int32 *) ARR_DATA_PTR(a3);
+    }
+    if (PG_ARGISNULL(5))
+        elog(ERROR, "padding type not specified.");
+    else
+    {
+        pd = text_to_cstring(PG_GETARG_TEXT_P(5));
+        if (strcasecmp(pd, "SAME") != 0 && strcasecmp(pd, "VALID") != 0)
+            elog(ERROR, "\"%s\" is not supported in tensor pooling padding.", pd);
+    }
+    t1 = ARR_ELEMTYPE(a1);
+    if (t1 != FLOAT4OID && t1 != FLOAT8OID)
+        elog(ERROR, "input argument type must be float array type.");
+    s[0] = d1[0];
+    if (strcasecmp(df, "NWC") == 0)
+        n5 = 3;
+    else if (strcasecmp(df, "NHWC") == 0)
+        n5 = 4;
+    else if (strcasecmp(df, "NDHWC") == 0)
+        n5 = 5;
+    s[n5-1] = d1[n5-1];
+    if (n1 != n5 || c2 != n5 || p2[0] != 1 || p2[c2-1] != 1)
+        elog(ERROR, "input or ksize shape does not meet pool%dd operation.", n5-2);
+    for (uint32 i=0;i < n5;i++)
+        if (p2[i] > d1[i]) elog(ERROR, "input or ksize shape does not meet pool%dd operation.", n5-2);
+    if (a3 != NULL)
+    {
+        if (c3 != n5 || p3[0] != 1 || p3[c3-1] != 1)
+            elog(ERROR, "strides shape does not meet pool%dd operation.", n5-2);
+        for (uint32 i=0;i < n1;i++)
+        {
+            if (p3[i] <= 0 || p3[i] > d1[i])
+                elog(ERROR, "strides shape does not meet pool%dd operation.", n1-2);
+        }
+    }
+    if (strcasecmp(pd, "SAME") == 0)
+    {
+        if (n3 == 0)
+        {
+            for (uint32 i=1;i < n5-1;i++) s[i] = d1[i];
+        }
+        else
+        {
+            for (uint32 i=1;i < n5-1;i++)
+            {
+                if (d1[i] % (p3[i]) == 0)
+                    s[i] = d1[i] / p3[i];
+                else
+                    s[i] = d1[i] / p3[i] + 1;
+            }
+        }
+        c4 = n5 * 2;
+        p4 = (int *) palloc0(c4 * sizeof(int));
+        for (uint32 i=1;i < n5-1;i++)
+        {
+            if (p2[i] > p3[i])
+            {
+                p4[2*i] = (p2[i] - 1) / 2;
+                p4[2*i+1] = ((p2[i] - 1) / 2) + ((p2[i] - 1) % 2);
+            }
+            else
+            {
+                int32 _p_ = s[i] * p3[i] - d1[i];
+                p4[2*i] = _p_ / 2;
+                p4[2*i+1] = (_p_ / 2) + (_p_ % 2);
+            }
+        }
+    }
+    else
+    {
+        if (n3 == 0)
+        {
+            for (uint32 i=1;i < n5-1;i++) s[i] = d1[i] - p2[i] + 1;
+        }
+        else
+        {
+            for (uint32 i=1;i < n5-1;i++)
+            {
+                if ((d1[i] - p2[i] + 1) % (p3[i]) == 0)
+                    s[i] = (d1[i] - p2[i] + 1) / p3[i];
+                else
+                    s[i] = (d1[i] - p2[i] + 1) / p3[i] + 1;
+            }
+        }
+        c4 = 0;
+        p4 = NULL;
+    }
+    d5 = (int *) palloc(n5 * sizeof(int));
+    b5 = (int *) palloc(n5 * sizeof(int));
+    for (uint32 i=0;i < n5;i++)
+    {
+        d5[i] = s[i];
+        b5[i] = 1;
+        c5 *= s[i];
+    }
+    if (t1 == FLOAT4OID)
+    {
+        p5 = palloc(c5 * sizeof(float4));
+        l5 = c5 * sizeof(float4) + ARR_OVERHEAD_NONULLS(n5);
+    }
+    else if (t1 == FLOAT8OID)
+    {
+        p5 = palloc(c5 * sizeof(float8));
+        l5 = c5 * sizeof(float8) + ARR_OVERHEAD_NONULLS(n5);
+    }
+
+    INSTR_TIME_SET_CURRENT(s1);
+    if (strcasecmp(fn, "max") == 0)
+        pg_tensor_pool(t1, 1, (void*) p1, n1, (unsigned int*)d1, (unsigned int*)p2, (unsigned int*) p3, (unsigned int*) p4, (void*) p5, (unsigned int*)d5);
+    else if (strcasecmp(fn, "avg") == 0)
+        pg_tensor_pool(t1, 2, (void*) p1, n1, (unsigned int*)d1, (unsigned int*)p2, (unsigned int*) p3, (unsigned int*) p4, (void*) p5, (unsigned int*)d5);
+    INSTR_TIME_SET_CURRENT(s2);
+    INSTR_TIME_SUBTRACT(s2,s1);
+    ereport(LOG,(errmsg("eigen pooling spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));
 
     a5 = (ArrayType *) palloc0(l5);
     SET_VARSIZE(a5, l5);

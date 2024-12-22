@@ -23,3 +23,6 @@ CREATE FUNCTION array_calc(text, float8[], float8[]) RETURNS float8[] AS 'MODULE
 
 CREATE FUNCTION array_convolve(text, float4[], float4[], int4[], text) RETURNS float4[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
 CREATE FUNCTION array_convolve(text, float8[], float8[], int4[], text) RETURNS float8[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
+
+CREATE FUNCTION array_pool(text, text, float4[], int4[], int4[], text) RETURNS float4[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
+CREATE FUNCTION array_pool(text, text, float8[], int4[], int4[], text) RETURNS float8[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
