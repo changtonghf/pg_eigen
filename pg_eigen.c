@@ -443,7 +443,8 @@ Datum array_calc(PG_FUNCTION_ARGS)
 Datum array_convolve(PG_FUNCTION_ARGS)
 {
     ArrayType *a1, *a2, *a3, *a5;
-    char      *df, *pd, *p1, *p2, *p3;
+    char      *df, *pd, *p1, *p2;
+    int32     *p3;
     void      *p5;
     Oid        t1,  t2;
     int        n1, *d1, n2, *d2, n3, *d3, c3, c4, *p4;
@@ -474,7 +475,7 @@ Datum array_convolve(PG_FUNCTION_ARGS)
         if (n3 != 1) elog(ERROR, "strides shape must be one dimension.");
         d3 = ARR_DIMS(a3);
         c3 = ArrayGetNItems(n3, d3);
-        p3 = ARR_DATA_PTR(a3);
+        p3 = (int32 *) ARR_DATA_PTR(a3);
     }
     if (PG_ARGISNULL(4))
         elog(ERROR, "padding type not specified.");
@@ -497,11 +498,6 @@ Datum array_convolve(PG_FUNCTION_ARGS)
     p1 = ARR_DATA_PTR(a1);
     p2 = ARR_DATA_PTR(a2);
     s[0] = d1[0];
-    for (uint32 i=0;i < n1-1;i++)
-    {
-        if (((int32*)p3)[i] <= 0 || ((int32*)p3)[i] > d1[i+1])
-            elog(ERROR, "strides shape does not meet conv%dd operation.", n1-2);
-    }
     if (strcasecmp(df, "NWC") == 0)
     {
         s[2] = d2[2];
@@ -521,8 +517,16 @@ Datum array_convolve(PG_FUNCTION_ARGS)
         elog(ERROR, "input or kernel shape does not meet conv%dd operation.", n5-2);
     for (uint32 i=0;i < n5-1;i++)
         if (d2[i] > d1[i+1]) elog(ERROR, "input or kernel shape does not meet conv%dd operation.", n5-2);
-    if (a3 != NULL && (c3 != n5-1 || ((int32*)p3)[c3-1] != 1))
-        elog(ERROR, "strides shape does not meet conv%dd operation.", n5-2);
+    if (a3 != NULL)
+    {
+        if (c3 != n5-1 || p3[c3-1] != 1)
+            elog(ERROR, "strides shape does not meet conv%dd operation.", n5-2);
+        for (uint32 i=0;i < n1-1;i++)
+        {
+            if (p3[i] <= 0 || p3[i] > d1[i+1])
+                elog(ERROR, "strides shape does not meet conv%dd operation.", n1-2);
+        }
+    }
     if (strcasecmp(pd, "SAME") == 0)
     {
         if (n3 == 0)
@@ -533,24 +537,24 @@ Datum array_convolve(PG_FUNCTION_ARGS)
         {
             for (uint32 i=1;i < n5-1;i++)
             {
-                if (d1[i] % (((int32*)p3)[i-1]) == 0)
-                    s[i] = d1[i] / (((int32*)p3)[i-1]);
+                if (d1[i] % p3[i-1] == 0)
+                    s[i] = d1[i] / p3[i-1];
                 else
-                    s[i] = d1[i] / (((int32*)p3)[i-1]) + 1;
+                    s[i] = d1[i] / p3[i-1] + 1;
             }
         }
         c4 = (n5-1) * 2;
         p4 = (int *) palloc0(c4 * sizeof(int));
         for (uint32 i=0;i < n5-2;i++)
         {
-            if (d2[i] > ((int32*)p3)[i])
+            if (d2[i] > p3[i])
             {
                 p4[2*i] = (d2[i] - 1) / 2;
                 p4[2*i+1] = ((d2[i] - 1) / 2) + ((d2[i] - 1) % 2);
             }
             else
             {
-                int32 _p_ = s[i+1] * (((int32*)p3)[i]) - d1[i+1];
+                int32 _p_ = s[i+1] * p3[i] - d1[i+1];
                 p4[2*i] = _p_ / 2;
                 p4[2*i+1] = (_p_ / 2) + (_p_ % 2);
             }
@@ -566,10 +570,10 @@ Datum array_convolve(PG_FUNCTION_ARGS)
         {
             for (uint32 i=1;i < n5-1;i++)
             {
-                if ((d1[i] - d2[i-1] + 1) % (((int32*)p3)[i-1]) == 0)
-                    s[i] = (d1[i] - d2[i-1] + 1) / (((int32*)p3)[i-1]);
+                if ((d1[i] - d2[i-1] + 1) % p3[i-1] == 0)
+                    s[i] = (d1[i] - d2[i-1] + 1) / p3[i-1];
                 else
-                    s[i] = (d1[i] - d2[i-1] + 1) / (((int32*)p3)[i-1]) + 1;
+                    s[i] = (d1[i] - d2[i-1] + 1) / p3[i-1] + 1;
             }
         }
         c4 = 0;
