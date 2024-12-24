@@ -822,3 +822,37 @@ extern "C" void pg_tensor_pool(unsigned int oid,unsigned int fn,void* i1,unsigne
             tensor_pool<double, Eigen::RowMajor, 5>(fn, (double*) i1, d1, k2, s3, p4, (double*) o5, d5);
     }
 }
+
+template<typename T,int L>
+void tensor_activate(unsigned int fn,unsigned int m,T* a,T g)
+{
+    Eigen::TensorMap<Eigen::Tensor<T, 1, L>> x(a, m);
+    switch (fn)
+    {
+        case 1:
+            x = x.cwiseMax((T)0);
+            break;
+        case 2:
+            x = x.sigmoid();
+            break;
+        case 3:
+            x = x.tanh();
+            break;
+        case 4:
+            x = x.cwiseMin((T)0) * g + x.cwiseMax((T)0);
+            break;
+        case 5:
+            x = (x.cwiseMin((T)0).exp() - x.constant((T)1)) * g + x.cwiseMax((T)0);
+            break;
+        default:
+            break;
+    }
+}
+
+extern "C" void pg_tensor_activate(unsigned int oid,unsigned int fn,unsigned int num,void* a1,float g)
+{
+    if (oid == 700)
+        tensor_activate<float, Eigen::RowMajor>(fn, num, (float*) a1, g);
+    else if (oid == 701)
+        tensor_activate<double, Eigen::RowMajor>(fn, num, (double*) a1, (double) g);
+}

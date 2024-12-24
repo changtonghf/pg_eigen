@@ -18,6 +18,7 @@ extern void pg_tensor_shuffle(unsigned int oid,unsigned int step,unsigned int nu
 extern void pg_tensor_calc(unsigned int oid,unsigned int fn,unsigned int num,void* a1,void* a2);
 extern void pg_tensor_convolve(unsigned int oid,void* i1,unsigned int n1,unsigned int* d1,void* k2,unsigned int* d2,unsigned int* s3,unsigned int* p4,void* o5,unsigned int* d5);
 extern void pg_tensor_pool(unsigned int oid,unsigned int fn,void* i1,unsigned int n1,unsigned int* d1,unsigned int* k2,unsigned int* s3,unsigned int* p4,void* o5,unsigned int* d5);
+extern void pg_tensor_activate(unsigned int oid,unsigned int fn,unsigned int num,void* a1,float g);
 
 PG_FUNCTION_INFO_V1(array_reduce);
 PG_FUNCTION_INFO_V1(array_fft);
@@ -26,6 +27,7 @@ PG_FUNCTION_INFO_V1(array_shuffle);
 PG_FUNCTION_INFO_V1(array_calc);
 PG_FUNCTION_INFO_V1(array_convolve);
 PG_FUNCTION_INFO_V1(array_pool);
+PG_FUNCTION_INFO_V1(array_activate);
 
 Datum array_reduce(PG_FUNCTION_ARGS)
 {
@@ -801,4 +803,49 @@ Datum array_pool(PG_FUNCTION_ARGS)
     pfree(b5);
     if (p4 != NULL) pfree(p4);
     PG_RETURN_ARRAYTYPE_P(a5);
+}
+
+Datum array_activate(PG_FUNCTION_ARGS)
+{
+    ArrayType *a1;
+    char      *fn, *p1;
+    Oid        t1;
+    int        n1, c1, *d1;
+    float4     g = 0;
+
+    if (PG_ARGISNULL(0))
+        elog(ERROR, "activate function name not specified.");
+    fn = text_to_cstring(PG_GETARG_TEXT_P(0));
+    if (strcasecmp(fn, "sigmoid") != 0 && strcasecmp(fn, "tanh") != 0 && strcasecmp(fn, "relu") != 0 && strcasecmp(fn, "leaky relu") != 0 && strcasecmp(fn, "elu") != 0)
+        elog(ERROR, "\"%s\" is currently not supported in tensor activation.", fn);
+    if (PG_ARGISNULL(1)) PG_RETURN_NULL();
+    if (strcasecmp(fn, "leaky relu") == 0 || strcasecmp(fn, "elu") == 0)
+    {
+        if (PG_ARGISNULL(2))
+            elog(ERROR, "gradient alpha not specified.");
+        g = PG_GETARG_FLOAT4(2);
+        if (g <= 0 || g >= 1)
+            elog(ERROR, "gradient alpha value is unreasonable.");
+    }
+    a1 = PG_GETARG_ARRAYTYPE_P(1);
+    t1 = ARR_ELEMTYPE(a1);
+    if (t1 != FLOAT4OID && t1 != FLOAT8OID)
+        elog(ERROR, "input argument type must be float array type.");
+    n1 = ARR_NDIM(a1);
+    d1 = ARR_DIMS(a1);
+    p1 = ARR_DATA_PTR(a1);
+    c1 = ArrayGetNItems(n1, d1);
+
+    if (strcasecmp(fn, "relu") == 0)
+        pg_tensor_activate(t1, 1, c1, (void*) p1, g);
+    else if (strcasecmp(fn, "sigmoid") == 0)
+        pg_tensor_activate(t1, 2, c1, (void*) p1, g);
+    else if (strcasecmp(fn, "tanh") == 0)
+        pg_tensor_activate(t1, 3, c1, (void*) p1, g);
+    else if (strcasecmp(fn, "leaky relu") == 0)
+        pg_tensor_activate(t1, 4, c1, (void*) p1, g);
+    else if (strcasecmp(fn, "elu") == 0)
+        pg_tensor_activate(t1, 5, c1, (void*) p1, g);
+
+    PG_RETURN_ARRAYTYPE_P(a1);
 }
