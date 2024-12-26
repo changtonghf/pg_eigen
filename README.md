@@ -305,6 +305,14 @@ select array_activate('elu', array[[-9,-8,-7,-6,-5,-4,-3,-2,-1,0],[0,1,2,3,4,5,6
 ```
 ### 9. array_dropout
 ```sql
+/*
+ * The 1st parameter represents input tensor to be processed.
+ * The 2nd parameter represents drop rate.
+ * The 3rd parameter represents noise shape for randomly generated keep/drop flags.
+ * The 4th parameter represents random seed.
+ * with probability rate elements of input are set to 0. the remaining elements are scaled up by 1.0 / (1 - rate).
+ */
+
 select array_dropout(array[[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]::float8[], 0.8, NULL, 1);
                                      array_dropout
 ---------------------------------------------------------------------------------------
