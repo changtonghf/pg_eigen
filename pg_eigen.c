@@ -19,6 +19,7 @@ extern void pg_tensor_calc(unsigned int oid,unsigned int fn,unsigned int num,voi
 extern void pg_tensor_convolve(unsigned int oid,void* i1,unsigned int n1,unsigned int* d1,void* k2,unsigned int* d2,unsigned int* s3,unsigned int* p4,void* o5,unsigned int* d5);
 extern void pg_tensor_pool(unsigned int oid,unsigned int fn,void* i1,unsigned int n1,unsigned int* d1,unsigned int* k2,unsigned int* s3,unsigned int* p4,void* o5,unsigned int* d5);
 extern void pg_tensor_activate(unsigned int oid,unsigned int fn,unsigned int num,void* a1,float g);
+extern void pg_tensor_dropout(unsigned int oid,void* i1,unsigned int n1,unsigned int* d1,float r2,unsigned int* n2,unsigned int s2);
 
 PG_FUNCTION_INFO_V1(array_reduce);
 PG_FUNCTION_INFO_V1(array_fft);
@@ -28,6 +29,7 @@ PG_FUNCTION_INFO_V1(array_calc);
 PG_FUNCTION_INFO_V1(array_convolve);
 PG_FUNCTION_INFO_V1(array_pool);
 PG_FUNCTION_INFO_V1(array_activate);
+PG_FUNCTION_INFO_V1(array_dropout);
 
 Datum array_reduce(PG_FUNCTION_ARGS)
 {
@@ -846,6 +848,64 @@ Datum array_activate(PG_FUNCTION_ARGS)
         pg_tensor_activate(t1, 4, c1, (void*) p1, g);
     else if (strcasecmp(fn, "elu") == 0)
         pg_tensor_activate(t1, 5, c1, (void*) p1, g);
+
+    PG_RETURN_ARRAYTYPE_P(a1);
+}
+
+Datum array_dropout(PG_FUNCTION_ARGS)
+{
+    ArrayType *a1, *a2;
+    char      *p1;
+    uint32    *p2,  s2;
+    Oid        t1;
+    float4     r2;
+    int        n1, *d1, n2, *d2, c2;
+    instr_time s0,  s1;
+
+    if (PG_ARGISNULL(0)) PG_RETURN_NULL();
+    a1 = PG_GETARG_ARRAYTYPE_P(0);
+    t1 = ARR_ELEMTYPE(a1);
+    n1 = ARR_NDIM(a1);
+    d1 = ARR_DIMS(a1);
+    p1 = ARR_DATA_PTR(a1);
+    if (t1 != FLOAT4OID && t1 != FLOAT8OID)
+        elog(ERROR, "input argument type must be float array type.");
+    if (PG_ARGISNULL(1))
+        elog(ERROR, "drop rate not specified.");
+    r2 = PG_GETARG_FLOAT4(1);
+    if (r2 < 0 || r2 >= 1) elog(ERROR, "drop rate is unreasonable.");
+    if (PG_ARGISNULL(2))
+    {
+        a2 = NULL;
+        n2 = 0;
+        d2 = NULL;
+        c2 = 0;
+        p2 = NULL;
+    }
+    else
+    {
+        a2 = PG_GETARG_ARRAYTYPE_P(2);
+        n2 = ARR_NDIM(a2);
+        d2 = ARR_DIMS(a2);
+        c2 = ArrayGetNItems(n2, d2);
+        p2 = (uint32 *)ARR_DATA_PTR(a2);
+        if (n1 != c2) elog(ERROR, "noise shape is unreasonable.");
+        for (uint32 i=0;i < c2;i++)
+        {
+            if ((p2[i] <= 0) || (p2[i] > d1[i]) || (p2[i] != 1 && d1[i] % p2[i] != 0))
+                elog(ERROR, "noise shape is unreasonable.");
+        }
+    }
+    if (PG_ARGISNULL(3))
+        elog(ERROR, "random seed not specified.");
+    s2 = PG_GETARG_INT32(3);
+    if (s2 < 0) elog(ERROR, "random seed is unreasonable.");
+
+    INSTR_TIME_SET_CURRENT(s0);
+    pg_tensor_dropout(t1, (void*) p1, n1, (unsigned int*) d1, r2, (unsigned int*) p2, s2);
+    INSTR_TIME_SET_CURRENT(s1);
+    INSTR_TIME_SUBTRACT(s1,s0);
+    ereport(LOG,(errmsg("eigen dropout spend time %lu us", INSTR_TIME_GET_MICROSEC(s1))));
 
     PG_RETURN_ARRAYTYPE_P(a1);
 }

@@ -29,3 +29,6 @@ CREATE FUNCTION array_pool(text, text, float8[], int4[], int4[], text) RETURNS f
 
 CREATE FUNCTION array_activate(text, float4[], float4) RETURNS float4[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
 CREATE FUNCTION array_activate(text, float8[], float4) RETURNS float8[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
+
+CREATE FUNCTION array_dropout(float4[], float4, int4[], int4) RETURNS float8[] AS 'MODULE_PATHNAME' LANGUAGE C;
+CREATE FUNCTION array_dropout(float8[], float4, int4[], int4) RETURNS float8[] AS 'MODULE_PATHNAME' LANGUAGE C;

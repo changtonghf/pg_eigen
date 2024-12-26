@@ -856,3 +856,68 @@ extern "C" void pg_tensor_activate(unsigned int oid,unsigned int fn,unsigned int
     else if (oid == 701)
         tensor_activate<double, Eigen::RowMajor>(fn, num, (double*) a1, (double) g);
 }
+
+template<typename T,int L,unsigned int M>
+void tensor_dropout(T* i1,unsigned int* d1,T r2,unsigned int* n2,unsigned int s2)
+{
+    Eigen::array<unsigned int, M> m;
+    for (unsigned int i=0;i < M;i++) m[i] = d1[i];
+    Eigen::TensorMap<Eigen::Tensor<T, M, L>> in(i1, m);
+    Eigen::array<unsigned int, M> lo, hi, bc;
+    for (unsigned int i=0;i < M;i++) lo[i] = 0;
+    if (n2 == NULL)
+    {
+        for (unsigned int i=0;i < M;i++)
+        {
+            hi[i] = d1[i];
+            bc[i] = 1;
+        }
+    }
+    else
+    {
+        for (unsigned int i=0;i < M;i++)
+        {
+            hi[i] = n2[i];
+            bc[i] = d1[i] / n2[i];
+        }
+    }
+    Eigen::Tensor<T, M, L> ru = in.slice(lo, hi);
+    Eigen::internal::UniformRandomGenerator<T> u(s2);
+    Eigen::Tensor<bool, M, L> kp = ru.random(u) >= ru.constant(r2);
+    Eigen::Tensor<T, M, L> km = kp.template cast<T>();
+    in = in / in.constant(1 - r2) * km.broadcast(bc);
+}
+
+extern "C" void pg_tensor_dropout(unsigned int oid,void* i1,unsigned int n1,unsigned int* d1,float r2,unsigned int* n2,unsigned int s2)
+{
+    if (oid == 700)
+    {
+        if (n1 == 1)
+            tensor_dropout<float, Eigen::RowMajor, 1>((float*) i1, d1, r2, n2, s2);
+        else if (n1 == 2)
+            tensor_dropout<float, Eigen::RowMajor, 2>((float*) i1, d1, r2, n2, s2);
+        else if (n1 == 3)
+            tensor_dropout<float, Eigen::RowMajor, 3>((float*) i1, d1, r2, n2, s2);
+        else if (n1 == 4)
+            tensor_dropout<float, Eigen::RowMajor, 4>((float*) i1, d1, r2, n2, s2);
+        else if (n1 == 5)
+            tensor_dropout<float, Eigen::RowMajor, 5>((float*) i1, d1, r2, n2, s2);
+        else if (n1 == 6)
+            tensor_dropout<float, Eigen::RowMajor, 6>((float*) i1, d1, r2, n2, s2);
+    }
+    else if (oid == 701)
+    {
+        if (n1 == 1)
+            tensor_dropout<double, Eigen::RowMajor, 1>((double*) i1, d1, (double) r2, n2, s2);
+        else if (n1 == 2)
+            tensor_dropout<double, Eigen::RowMajor, 2>((double*) i1, d1, (double) r2, n2, s2);
+        else if (n1 == 3)
+            tensor_dropout<double, Eigen::RowMajor, 3>((double*) i1, d1, (double) r2, n2, s2);
+        else if (n1 == 4)
+            tensor_dropout<double, Eigen::RowMajor, 4>((double*) i1, d1, (double) r2, n2, s2);
+        else if (n1 == 5)
+            tensor_dropout<double, Eigen::RowMajor, 5>((double*) i1, d1, (double) r2, n2, s2);
+        else if (n1 == 6)
+            tensor_dropout<double, Eigen::RowMajor, 6>((double*) i1, d1, (double) r2, n2, s2);
+    }
+}
