@@ -32,3 +32,9 @@ CREATE FUNCTION array_activate(text, float8[], float4) RETURNS float8[] AS 'MODU
 
 CREATE FUNCTION array_dropout(float4[], float4, int4[], int4) RETURNS float8[] AS 'MODULE_PATHNAME' LANGUAGE C;
 CREATE FUNCTION array_dropout(float8[], float4, int4[], int4) RETURNS float8[] AS 'MODULE_PATHNAME' LANGUAGE C;
+
+CREATE FUNCTION array_matmul(  int2[],   int2[], int4[], boolean[]) RETURNS   int2[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
+CREATE FUNCTION array_matmul(  int4[],   int4[], int4[], boolean[]) RETURNS   int4[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
+CREATE FUNCTION array_matmul(  int8[],   int8[], int4[], boolean[]) RETURNS   int8[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
+CREATE FUNCTION array_matmul(float4[], float4[], int4[], boolean[]) RETURNS float4[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
+CREATE FUNCTION array_matmul(float8[], float8[], int4[], boolean[]) RETURNS float8[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;

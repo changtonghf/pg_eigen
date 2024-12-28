@@ -20,6 +20,7 @@ extern void pg_tensor_convolve(unsigned int oid,void* i1,unsigned int n1,unsigne
 extern void pg_tensor_pool(unsigned int oid,unsigned int fn,void* i1,unsigned int n1,unsigned int* d1,unsigned int* k2,unsigned int* s3,unsigned int* p4,void* o5,unsigned int* d5);
 extern void pg_tensor_activate(unsigned int oid,unsigned int fn,unsigned int num,void* a1,float g);
 extern void pg_tensor_dropout(unsigned int oid,void* i1,unsigned int n1,unsigned int* d1,float r2,unsigned int* n2,unsigned int s2);
+extern void pg_tensor_matmul(unsigned int oid,unsigned int m1,unsigned int n1,void* i1,unsigned int* d1,void* i2,unsigned int* d2,bool* b2,void* o3,unsigned int* d3);
 
 PG_FUNCTION_INFO_V1(array_reduce);
 PG_FUNCTION_INFO_V1(array_fft);
@@ -30,6 +31,7 @@ PG_FUNCTION_INFO_V1(array_convolve);
 PG_FUNCTION_INFO_V1(array_pool);
 PG_FUNCTION_INFO_V1(array_activate);
 PG_FUNCTION_INFO_V1(array_dropout);
+PG_FUNCTION_INFO_V1(array_matmul);
 
 Datum array_reduce(PG_FUNCTION_ARGS)
 {
@@ -908,4 +910,161 @@ Datum array_dropout(PG_FUNCTION_ARGS)
     ereport(LOG,(errmsg("eigen dropout spend time %lu us", INSTR_TIME_GET_MICROSEC(s1))));
 
     PG_RETURN_ARRAYTYPE_P(a1);
+}
+
+Datum array_matmul(PG_FUNCTION_ARGS)
+{
+    ArrayType *a1, *a2, *a3, *a4, *a5;
+    char      *p1, *p2;
+    Oid        t1,  t2;
+    int32      n1,  n2,  c1,  c2;
+    int32      n3,  n4,  c3,  c4;
+    int32      ls,  rs,	 lz,  rz;
+    int32     *d1, *d2, *d3, *d4, *p3;
+    int32     *d5, *b5,  l5,  c5 = 1 ,  m5[6] = {0,0,0,0,0,0};
+    bool      *p4;
+    void      *v5;
+    instr_time s1,  s2;
+
+    if (PG_ARGISNULL(0)) PG_RETURN_NULL();
+    if (PG_ARGISNULL(1)) PG_RETURN_NULL();
+    if (PG_ARGISNULL(2)) elog(ERROR, "matrix multiplication dimensions array not specified.");
+    a1 = PG_GETARG_ARRAYTYPE_P(0);
+    a2 = PG_GETARG_ARRAYTYPE_P(1);
+    a3 = PG_GETARG_ARRAYTYPE_P(2);
+    t1 = ARR_ELEMTYPE(a1);
+    if (t1 != INT2OID && t1 != INT4OID && t1 != INT8OID && t1 != FLOAT4OID && t1 != FLOAT8OID)
+        elog(ERROR, "array argument type must be number type.");
+    t2 = ARR_ELEMTYPE(a2);
+    if (t2 != t1)
+        elog(ERROR, "left and right matrix array must be same type.");
+    n1 = ARR_NDIM(a1);
+    n2 = ARR_NDIM(a2);
+    if (n1 != n2)
+        elog(ERROR, "left and right matrix array must have same dimensions.");
+    d1 = ARR_DIMS(a1);
+    d2 = ARR_DIMS(a2);
+    n3 = ARR_NDIM(a3);
+    if (n3 != 1) elog(ERROR, "matrix multiplication dimensions array must be 1 dimension.");
+    d3 = ARR_DIMS(a3);
+    c1 = ArrayGetNItems(n1, d1);
+    c2 = ArrayGetNItems(n2, d2);
+    if (c1 != c2)
+        elog(ERROR, "the number of elements in the left and right matrix arrays must be consistent.");
+    c3 = ArrayGetNItems(n3, d3);
+    if (c3 != 2) elog(ERROR, "matrix multiplication dimensions array length must be 2.");
+    p1 = ARR_DATA_PTR(a1);
+    p2 = ARR_DATA_PTR(a2);
+    p3 = (int32*) ARR_DATA_PTR(a3);
+    for (int32 i=0;i < c3;i++)
+    {
+        if (p3[i] < 0 || p3[i] > n1-1)
+            elog(ERROR, "matrix multiplication dimensions is unreasonable.");
+    }
+    if ((p3[0] != n1-2 || p3[1] != n1-1) && (p3[0] != n1-3 || p3[1] != n1-2))
+        elog(ERROR, "matrix array or multiplication dimensions is unreasonable.");
+    lz = d1[p3[1]];
+    rz = d2[p3[0]];
+    ls = d1[p3[0]];
+    rs = d2[p3[1]];
+    if (PG_ARGISNULL(3))
+    {
+        a4 = NULL;
+        n4 = 0;
+        d4 = NULL;
+        c4 = 0;
+        p4 = NULL;
+    }
+    else
+    {
+        a4 = PG_GETARG_ARRAYTYPE_P(3);
+        n4 = ARR_NDIM(a4);
+        if (n4 != 1) elog(ERROR, "transpose & conjugate configuration array must be 1 dimension.");
+        d4 = ARR_DIMS(a4);
+        c4 = ArrayGetNItems(n4, d4);
+        if (c4 != 4) elog(ERROR, "transpose & conjugate configuration array length must be 4.");
+        p4 = (bool*) ARR_DATA_PTR(a4);
+        if (p4[0] || p4[2])
+        {
+            lz = d1[p3[0]];
+            ls = d1[p3[1]];
+        }
+        if (p4[1] || p4[3])
+        {
+            rz = d2[p3[1]];
+            rs = d2[p3[0]];
+        }
+    }
+    for (int32 i=0;i < p3[0];i++)
+    {
+        if (d1[i] != d2[i])
+            elog(ERROR, "left and right %s matrix array must have same batch sizes.", p3[0] == n1-3 ? "complex" : "real");
+        m5[i] = d1[i];
+    }
+    if (lz != rz)
+        elog(ERROR, "left and right %s matrix array contraction size incompatible.", p3[0] == n1-3 ? "complex" : "real");
+    m5[p3[0]] = ls;
+    m5[p3[1]] = rs;
+    if (p3[0] == n1-3) m5[n1-1] = 2;
+    for (int32 i=0;i < n1;i++) c5 *= m5[i];
+    if (t1 == FLOAT4OID)
+    {
+        v5 = palloc(c5 * sizeof(float4));
+        l5 = c5 * sizeof(float4) + ARR_OVERHEAD_NONULLS(n1);
+    }
+    else if (t1 == FLOAT8OID)
+    {
+        v5 = palloc(c5 * sizeof(float8));
+        l5 = c5 * sizeof(float8) + ARR_OVERHEAD_NONULLS(n1);
+    }
+    else if (t1 == INT2OID)
+    {
+        v5 = palloc(c5 * sizeof(int16));
+        l5 = c5 * sizeof(int16) + ARR_OVERHEAD_NONULLS(n1);
+    }
+    else if (t1 == INT4OID)
+    {
+        v5 = palloc(c5 * sizeof(int32));
+        l5 = c5 * sizeof(int32) + ARR_OVERHEAD_NONULLS(n1);
+    }
+    else if (t1 == INT8OID)
+    {
+        v5 = palloc(c5 * sizeof(int64));
+        l5 = c5 * sizeof(int64) + ARR_OVERHEAD_NONULLS(n1);
+    }
+    d5 = (int *) palloc(n1 * sizeof(int));
+    b5 = (int *) palloc(n1 * sizeof(int));
+    for (uint32 i=0;i < n1;i++)
+    {
+        d5[i] = m5[i];
+        b5[i] = 1;
+    }
+
+    INSTR_TIME_SET_CURRENT(s1);
+    pg_tensor_matmul(t1, p3[0], n1, (void*) p1, (unsigned int*) d1, (void*) p2, (unsigned int*) d2, p4, v5, (unsigned int*) d5);
+    INSTR_TIME_SET_CURRENT(s2);
+    INSTR_TIME_SUBTRACT(s2,s1);
+    ereport(LOG,(errmsg("eigen tensor matrix multiplication spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));
+
+    a5 = (ArrayType *) palloc0(l5);
+    SET_VARSIZE(a5, l5);
+    a5->ndim = n1;
+    a5->dataoffset = 0;
+    a5->elemtype = t1;
+    memcpy(ARR_DIMS(a5)  , d5, n1 * sizeof(int));
+    memcpy(ARR_LBOUND(a5), b5, n1 * sizeof(int));
+    if (t1 == FLOAT4OID)
+        memcpy(ARR_DATA_PTR(a5), v5, c5 * sizeof(float4));
+    else if (t1 == FLOAT8OID)
+        memcpy(ARR_DATA_PTR(a5), v5, c5 * sizeof(float8));
+    else if (t1 == INT2OID)
+        memcpy(ARR_DATA_PTR(a5), v5, c5 * sizeof(int16 ));
+    else if (t1 == INT4OID)
+        memcpy(ARR_DATA_PTR(a5), v5, c5 * sizeof(int32 ));
+    else if (t1 == INT8OID)
+        memcpy(ARR_DATA_PTR(a5), v5, c5 * sizeof(int64 ));
+    pfree(v5);
+    pfree(d5);
+    pfree(b5);
+    PG_RETURN_ARRAYTYPE_P(a5);
 }
