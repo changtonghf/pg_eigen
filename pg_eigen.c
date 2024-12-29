@@ -15,7 +15,7 @@ extern void pg_tensor_reduce(unsigned int oid,unsigned int fn,char* in,unsigned 
 extern void pg_tensor_fft(unsigned int oid,bool forward,char* in,unsigned int n1,unsigned int* d1,void* out,unsigned int n2,unsigned int* d2);
 extern void pg_tensor_random(unsigned int fn,unsigned int num,double* out,double a1,double b1);
 extern void pg_tensor_shuffle(unsigned int oid,unsigned int step,unsigned int num,void* out);
-extern void pg_tensor_calc(unsigned int oid,unsigned int fn,unsigned int num,void* a1,void* a2);
+extern void pg_tensor_binaryop(unsigned int oid,unsigned int fn,unsigned int num,void* a1,void* a2);
 extern void pg_tensor_convolve(unsigned int oid,void* i1,unsigned int n1,unsigned int* d1,void* k2,unsigned int* d2,unsigned int* s3,unsigned int* p4,void* o5,unsigned int* d5);
 extern void pg_tensor_pool(unsigned int oid,unsigned int fn,void* i1,unsigned int n1,unsigned int* d1,unsigned int* k2,unsigned int* s3,unsigned int* p4,void* o5,unsigned int* d5);
 extern void pg_tensor_activate(unsigned int oid,unsigned int fn,unsigned int num,void* a1,float g);
@@ -27,7 +27,7 @@ PG_FUNCTION_INFO_V1(array_reduce);
 PG_FUNCTION_INFO_V1(array_fft);
 PG_FUNCTION_INFO_V1(array_random);
 PG_FUNCTION_INFO_V1(array_shuffle);
-PG_FUNCTION_INFO_V1(array_calc);
+PG_FUNCTION_INFO_V1(array_binaryop);
 PG_FUNCTION_INFO_V1(array_convolve);
 PG_FUNCTION_INFO_V1(array_pool);
 PG_FUNCTION_INFO_V1(array_activate);
@@ -399,7 +399,7 @@ Datum array_shuffle(PG_FUNCTION_ARGS)
     PG_RETURN_ARRAYTYPE_P(a1);
 }
 
-Datum array_calc(PG_FUNCTION_ARGS)
+Datum array_binaryop(PG_FUNCTION_ARGS)
 {
     ArrayType *a1, *a2;
     char      *fn, *p1, *p2;
@@ -437,13 +437,13 @@ Datum array_calc(PG_FUNCTION_ARGS)
     p2 = ARR_DATA_PTR(a2);
 
     if (strcasecmp(fn, "add") == 0)
-        pg_tensor_calc(t1, 1, c1, (void*) p1, (void*) p2);
+        pg_tensor_binaryop(t1, 1, c1, (void*) p1, (void*) p2);
     else if (strcasecmp(fn, "sub") == 0)
-        pg_tensor_calc(t1, 2, c1, (void*) p1, (void*) p2);
+        pg_tensor_binaryop(t1, 2, c1, (void*) p1, (void*) p2);
     else if (strcasecmp(fn, "mul") == 0)
-        pg_tensor_calc(t1, 3, c1, (void*) p1, (void*) p2);
+        pg_tensor_binaryop(t1, 3, c1, (void*) p1, (void*) p2);
     else if (strcasecmp(fn, "div") == 0)
-        pg_tensor_calc(t1, 4, c1, (void*) p1, (void*) p2);
+        pg_tensor_binaryop(t1, 4, c1, (void*) p1, (void*) p2);
 
     PG_RETURN_ARRAYTYPE_P(a1);
 }
