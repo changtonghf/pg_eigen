@@ -389,7 +389,7 @@ Datum array_shuffle(PG_FUNCTION_ARGS)
     else
         d2 = PG_GETARG_INT32(1);
     if (d2 > n1)
-        elog(ERROR, "the second argument should be either equal to or one less than the dimension of the first argument.");
+        elog(ERROR, "the second parameter's value range should be within the dimensions of the first parameter.");
     s2 = c1;
     if (d2 != n1)
     {
