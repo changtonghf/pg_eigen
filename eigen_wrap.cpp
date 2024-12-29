@@ -1010,3 +1010,106 @@ extern "C" void pg_tensor_matmul(unsigned int oid,unsigned int m1,unsigned int n
             tensor_cmatmul<long, Eigen::RowMajor>(n1,(std::complex<long> *) i1, d1,(std::complex<long> *) i2, d2, b2,(std::complex<long> *) o3, d3);
     }
 }
+
+template<typename T,int L,unsigned int M>
+void tensor_softmax(T* in,unsigned int* d1,unsigned int r1,double* out)
+{
+    Eigen::array<unsigned int, M> m;
+    for (unsigned int i=0;i < M;i++) m[i] = d1[i];
+    Eigen::TensorMap<Eigen::Tensor<T, M, L>> x(in, m);
+    Eigen::TensorMap<Eigen::Tensor<double, M, L>> y(out, m);
+    Eigen::Tensor<double, M, L> a = x.template cast<double>().exp();
+    Eigen::array<Eigen::ptrdiff_t, 1> r = {r1};
+    Eigen::array<Eigen::ptrdiff_t, M> s, t;
+    for (unsigned int i=0;i < M;i++)
+    {
+        if (i == r1)
+        {
+            s[i] = 1; t[i] = d1[i];
+        }
+        else
+        {
+            t[i] = 1; s[i] = d1[i];
+        }
+    }
+    y = a / (a.sum(r).reshape(s).broadcast(t));
+}
+
+extern "C" void pg_tensor_softmax(unsigned int oid,void* in,unsigned int n1,unsigned int* d1,unsigned int r1,void* out)
+{
+    if (oid == 700)
+    {
+        if (n1 == 1)
+            tensor_softmax<float, Eigen::RowMajor, 1>((float*) in, d1, r1, (double*) out);
+        else if (n1 == 2)
+            tensor_softmax<float, Eigen::RowMajor, 2>((float*) in, d1, r1, (double*) out);
+        else if (n1 == 3)
+            tensor_softmax<float, Eigen::RowMajor, 3>((float*) in, d1, r1, (double*) out);
+        else if (n1 == 4)
+            tensor_softmax<float, Eigen::RowMajor, 4>((float*) in, d1, r1, (double*) out);
+        else if (n1 == 5)
+            tensor_softmax<float, Eigen::RowMajor, 5>((float*) in, d1, r1, (double*) out);
+        else if (n1 == 6)
+            tensor_softmax<float, Eigen::RowMajor, 6>((float*) in, d1, r1, (double*) out);
+    }
+    else if (oid == 701)
+    {
+        if (n1 == 1)
+            tensor_softmax<double, Eigen::RowMajor, 1>((double*) in, d1, r1, (double*) out);
+        else if (n1 == 2)
+            tensor_softmax<double, Eigen::RowMajor, 2>((double*) in, d1, r1, (double*) out);
+        else if (n1 == 3)
+            tensor_softmax<double, Eigen::RowMajor, 3>((double*) in, d1, r1, (double*) out);
+        else if (n1 == 4)
+            tensor_softmax<double, Eigen::RowMajor, 4>((double*) in, d1, r1, (double*) out);
+        else if (n1 == 5)
+            tensor_softmax<double, Eigen::RowMajor, 5>((double*) in, d1, r1, (double*) out);
+        else if (n1 == 6)
+            tensor_softmax<double, Eigen::RowMajor, 6>((double*) in, d1, r1, (double*) out);
+    }
+    else if (oid ==  21)
+    {
+        if (n1 == 1)
+            tensor_softmax<short, Eigen::RowMajor, 1>((short*) in, d1, r1, (double*) out);
+        else if (n1 == 2)
+            tensor_softmax<short, Eigen::RowMajor, 2>((short*) in, d1, r1, (double*) out);
+        else if (n1 == 3)
+            tensor_softmax<short, Eigen::RowMajor, 3>((short*) in, d1, r1, (double*) out);
+        else if (n1 == 4)
+            tensor_softmax<short, Eigen::RowMajor, 4>((short*) in, d1, r1, (double*) out);
+        else if (n1 == 5)
+            tensor_softmax<short, Eigen::RowMajor, 5>((short*) in, d1, r1, (double*) out);
+        else if (n1 == 6)
+            tensor_softmax<short, Eigen::RowMajor, 6>((short*) in, d1, r1, (double*) out);
+    }
+    else if (oid ==  23)
+    {
+        if (n1 == 1)
+            tensor_softmax<int, Eigen::RowMajor, 1>((int*) in, d1, r1, (double*) out);
+        else if (n1 == 2)
+            tensor_softmax<int, Eigen::RowMajor, 2>((int*) in, d1, r1, (double*) out);
+        else if (n1 == 3)
+            tensor_softmax<int, Eigen::RowMajor, 3>((int*) in, d1, r1, (double*) out);
+        else if (n1 == 4)
+            tensor_softmax<int, Eigen::RowMajor, 4>((int*) in, d1, r1, (double*) out);
+        else if (n1 == 5)
+            tensor_softmax<int, Eigen::RowMajor, 5>((int*) in, d1, r1, (double*) out);
+        else if (n1 == 6)
+            tensor_softmax<int, Eigen::RowMajor, 6>((int*) in, d1, r1, (double*) out);
+    }
+    else if (oid ==  20)
+    {
+        if (n1 == 1)
+            tensor_softmax<long, Eigen::RowMajor, 1>((long*) in, d1, r1, (double*) out);
+        else if (n1 == 2)
+            tensor_softmax<long, Eigen::RowMajor, 2>((long*) in, d1, r1, (double*) out);
+        else if (n1 == 3)
+            tensor_softmax<long, Eigen::RowMajor, 3>((long*) in, d1, r1, (double*) out);
+        else if (n1 == 4)
+            tensor_softmax<long, Eigen::RowMajor, 4>((long*) in, d1, r1, (double*) out);
+        else if (n1 == 5)
+            tensor_softmax<long, Eigen::RowMajor, 5>((long*) in, d1, r1, (double*) out);
+        else if (n1 == 6)
+            tensor_softmax<long, Eigen::RowMajor, 6>((long*) in, d1, r1, (double*) out);
+    }
+}
