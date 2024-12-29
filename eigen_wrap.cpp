@@ -574,10 +574,15 @@ extern "C" void pg_tensor_fft(unsigned int oid,bool forward,char* in,unsigned in
     }
 }
 
-extern "C" void pg_tensor_random(unsigned int fn,unsigned int num,double* out,double a1,double b1)
+extern "C" void pg_tensor_random(unsigned int fn,unsigned int num,double* out,double a1,double b1,int s1)
 {
-    std::random_device rd;
-    std::mt19937 gen(rd());
+    unsigned int seed = s1;
+    if (s1 < 0)
+    {
+        std::random_device rd;
+        seed = rd();
+    }
+    std::mt19937 gen(seed);
     if (fn == 1)
     {
         std::normal_distribution<double> nd(a1, b1);

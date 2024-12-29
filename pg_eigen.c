@@ -13,7 +13,7 @@ PG_MODULE_MAGIC;
 
 extern void pg_tensor_reduce(unsigned int oid,unsigned int fn,char* in,unsigned int n1,unsigned int* d1,void* out,unsigned int n2,unsigned int* d2);
 extern void pg_tensor_fft(unsigned int oid,bool forward,char* in,unsigned int n1,unsigned int* d1,void* out,unsigned int n2,unsigned int* d2);
-extern void pg_tensor_random(unsigned int fn,unsigned int num,double* out,double a1,double b1);
+extern void pg_tensor_random(unsigned int fn,unsigned int num,double* out,double a1,double b1,int s1);
 extern void pg_tensor_shuffle(unsigned int oid,unsigned int step,unsigned int num,void* out);
 extern void pg_tensor_binaryop(unsigned int oid,unsigned int fn,unsigned int num,void* a1,void* a2);
 extern void pg_tensor_convolve(unsigned int oid,void* i1,unsigned int n1,unsigned int* d1,void* k2,unsigned int* d2,unsigned int* s3,unsigned int* p4,void* o5,unsigned int* d5);
@@ -304,7 +304,7 @@ Datum array_random(PG_FUNCTION_ARGS)
     ArrayType *a1, *a2;
     char      *fn;
     uint32    *p1;
-    int        n1, *d1, c1, l2, *b2, *d2, n2 = 1;
+    int        n1, *d1, c1, l2, *b2, *d2, n2 = 1, s;
     float8     a, b, *v2;
 
     if (PG_ARGISNULL(0))
@@ -332,7 +332,13 @@ Datum array_random(PG_FUNCTION_ARGS)
         b = 1;
     else
         b = PG_GETARG_FLOAT8(3);
-
+    if (PG_ARGISNULL(4))
+        s = -1;
+    else
+    {
+        s = PG_GETARG_INT32(4);
+        if (s < 0) elog(ERROR, "random seed can't be less than 0.");
+    }
     d2 = (int *) palloc(c1 * sizeof(int));
     b2 = (int *) palloc(c1 * sizeof(int));
     for (uint32 i=0;i < c1;i++) 
@@ -344,13 +350,13 @@ Datum array_random(PG_FUNCTION_ARGS)
     v2 = (float8 *) palloc(n2 * sizeof(float8));
 
     if (strcasecmp(fn, "random_normal") == 0)
-        pg_tensor_random(1, n2, v2, a, b);
+        pg_tensor_random(1, n2, v2, a, b, s);
     else if (strcasecmp(fn, "truncated_normal") == 0)
-        pg_tensor_random(2, n2, v2, a, b);
+        pg_tensor_random(2, n2, v2, a, b, s);
     else if (strcasecmp(fn, "random_uniform") == 0)
-        pg_tensor_random(3, n2, v2, a, b);
+        pg_tensor_random(3, n2, v2, a, b, s);
     else if (strcasecmp(fn, "random_gamma") == 0)
-        pg_tensor_random(4, n2, v2, a, b);
+        pg_tensor_random(4, n2, v2, a, b, s);
 
     l2 = n2 * sizeof(float8) + ARR_OVERHEAD_NONULLS(c1);
     a2 = (ArrayType *) palloc0(l2);
