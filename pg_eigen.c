@@ -17,7 +17,7 @@ extern void pg_tensor_random(unsigned int fn,unsigned int num,double* out,double
 extern void pg_tensor_shuffle(unsigned int oid,unsigned int step,unsigned int num,void* out);
 extern void pg_tensor_binaryop(unsigned int oid,unsigned int fn,unsigned int num,void* a1,void* a2);
 extern void pg_tensor_convolve(unsigned int oid,void* i1,unsigned int n1,unsigned int* d1,void* k2,unsigned int* d2,unsigned int* s3,unsigned int* p4,void* o5,unsigned int* d5);
-extern void pg_tensor_pool(unsigned int oid,unsigned int fn,void* i1,unsigned int n1,unsigned int* d1,unsigned int* k2,unsigned int* s3,unsigned int* p4,void* o5,unsigned int* d5);
+extern void pg_tensor_pool(int oid,int fn,void* i1,int n1,int* d1,int* k2,int* s3,int* p4,void* o5,int* d5);
 extern void pg_tensor_activate(int oid,int fn,int c1,void* a1,float g);
 extern void pg_tensor_dropout(int oid,void* i1,int n1,int* d1,float r2,int* n2,int s2);
 extern void pg_tensor_matmul(int oid,int m1,int n1,void* i1,int* d1,void* i2,int* d2,bool* b2,void* o3,int* d3);
@@ -642,7 +642,7 @@ Datum array_pool(PG_FUNCTION_ARGS)
 {
     ArrayType *a1, *a2, *a3, *a5;
     char      *fn, *df, *pd, *p1;
-    int32     *p2, *p3;
+    int       *p2, *p3;
     void      *p5;
     Oid        t1;
     int        n1, *d1, n2, *d2, c2, n3, *d3, c3, c4, *p4;
@@ -670,7 +670,7 @@ Datum array_pool(PG_FUNCTION_ARGS)
     if (n2 != 1) elog(ERROR, "ksize shape must be one dimension.");
     d2 = ARR_DIMS(a2);
     p1 = ARR_DATA_PTR(a1);
-    p2 = (int32 *) ARR_DATA_PTR(a2);
+    p2 = (int*)ARR_DATA_PTR(a2);
     c2 = ArrayGetNItems(n2, d2);
     if (PG_ARGISNULL(4))
     {
@@ -794,9 +794,9 @@ Datum array_pool(PG_FUNCTION_ARGS)
 
     INSTR_TIME_SET_CURRENT(s1);
     if (strcasecmp(fn, "max") == 0)
-        pg_tensor_pool(t1, 1, (void*) p1, n1, (unsigned int*)d1, (unsigned int*)p2, (unsigned int*) p3, (unsigned int*) p4, (void*) p5, (unsigned int*)d5);
+        pg_tensor_pool(t1, 1, (void*) p1, n1, d1, p2, p3, p4, (void*) p5, d5);
     else if (strcasecmp(fn, "avg") == 0)
-        pg_tensor_pool(t1, 2, (void*) p1, n1, (unsigned int*)d1, (unsigned int*)p2, (unsigned int*) p3, (unsigned int*) p4, (void*) p5, (unsigned int*)d5);
+        pg_tensor_pool(t1, 2, (void*) p1, n1, d1, p2, p3, p4, (void*) p5, d5);
     INSTR_TIME_SET_CURRENT(s2);
     INSTR_TIME_SUBTRACT(s2,s1);
     ereport(LOG,(errmsg("eigen pooling spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));

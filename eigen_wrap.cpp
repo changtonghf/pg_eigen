@@ -759,29 +759,29 @@ extern "C" void pg_tensor_convolve(unsigned int oid,void* i1,unsigned int n1,uns
     }
 }
 
-template<typename T,int L,unsigned int M>
-void tensor_pool(unsigned int fn,T* i1,unsigned int* d1,unsigned int* k2,unsigned int* s3,unsigned int* p4,T* o5,unsigned int* d5)
+template<typename T,int L,int M>
+void tensor_pool(int fn,T* i1,int* d1,int* k2,int* s3,int* p4,T* o5,int* d5)
 {
-    Eigen::array<unsigned int, M> m;
-    for (unsigned int i=0;i < M;i++) m[i] = d1[i];
+    Eigen::array<int, M> m;
+    for (int i=0;i < M;i++) m[i] = d1[i];
     Eigen::TensorMap<Eigen::Tensor<T, M, L>> in(i1, m);
-    Eigen::array<unsigned int, M> kr;
+    Eigen::array<int, M> kr;
     kr[0] = d1[0];kr[M-1] = d1[M-1];
-    for (unsigned int i=1;i < M-1;i++) kr[i] = k2[i];
+    for (int i=1;i < M-1;i++) kr[i] = k2[i];
     Eigen::array<std::pair<ptrdiff_t, ptrdiff_t>, M> pd;
     if (p4 == NULL)
     {
-        for (unsigned int i=0;i < M;i++)
+        for (int i=0;i < M;i++)
             pd[i] = std::make_pair((ptrdiff_t)0,(ptrdiff_t)0);
     }
     else
     {
-        for (unsigned int i=0;i < M;i++)
+        for (int i=0;i < M;i++)
             pd[i] = std::make_pair((ptrdiff_t)p4[2*i],(ptrdiff_t)p4[2*i+1]);
     }
     Eigen::Tensor<T, 3, L> pp;
     Eigen::array<ptrdiff_t, M-2> rd;
-    for (unsigned int i=2;i < M;i++) rd[i-2] = i;
+    for (int i=2;i < M;i++) rd[i-2] = i;
     Eigen::Tensor<T, M, L> p0 = in.pad(pd);
     Eigen::Tensor<T, M+1, L> ep = p0.extract_patches(kr);
     if (fn == 1)
@@ -790,23 +790,23 @@ void tensor_pool(unsigned int fn,T* i1,unsigned int* d1,unsigned int* k2,unsigne
         pp = ep.mean(rd);
     Eigen::DSizes<Eigen::DenseIndex, M> sd;
     sd[M-2] = d1[0];sd[M-1] = d1[M-1];
-    for (unsigned int i=0;i < M-2;i++) sd[i] = p0.dimension(i+1) - k2[i+1] + 1;
+    for (int i=0;i < M-2;i++) sd[i] = p0.dimension(i+1) - k2[i+1] + 1;
     Eigen::Tensor<T, M, L> ps = pp.reshape(sd);
     Eigen::DSizes<Eigen::DenseIndex, M> fd;
     fd[0] = M-2;fd[M-1] = M-1;
-    for (unsigned int i=1;i < M-1;i++) fd[i] = i-1;
+    for (int i=1;i < M-1;i++) fd[i] = i-1;
     Eigen::Tensor<T, M, L> pf = ps.shuffle(fd);
     Eigen::DSizes<Eigen::DenseIndex, M> st;
-    for (unsigned int i=0;i < M;i++) st[i] = 0;
+    for (int i=0;i < M;i++) st[i] = 0;
     Eigen::DSizes<Eigen::DenseIndex, M> ed;
-    for (unsigned int i=0;i < M;i++) ed[i] = pf.dimension(i);
+    for (int i=0;i < M;i++) ed[i] = pf.dimension(i);
     Eigen::DSizes<Eigen::DenseIndex, M> iv;
-    for (unsigned int i=0;i < M;i++) iv[i] = s3[i];
+    for (int i=0;i < M;i++) iv[i] = s3[i];
     Eigen::Tensor<T, M, L> fo = pf.stridedSlice(st,ed,iv);
     std::copy(fo.data(), fo.data() + fo.size(), o5);
 }
 
-extern "C" void pg_tensor_pool(unsigned int oid,unsigned int fn,void* i1,unsigned int n1,unsigned int* d1,unsigned int* k2,unsigned int* s3,unsigned int* p4,void* o5,unsigned int* d5)
+extern "C" void pg_tensor_pool(int oid,int fn,void* i1,int n1,int* d1,int* k2,int* s3,int* p4,void* o5,int* d5)
 {
     if (oid == 700)
     {
