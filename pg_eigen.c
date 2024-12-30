@@ -15,7 +15,7 @@ extern void pg_tensor_reduce(unsigned int oid,unsigned int fn,char* in,unsigned 
 extern void pg_tensor_fft(unsigned int oid,bool forward,char* in,unsigned int n1,unsigned int* d1,void* out,unsigned int n2,unsigned int* d2);
 extern void pg_tensor_random(unsigned int fn,unsigned int num,double* out,double a1,double b1,int s1);
 extern void pg_tensor_shuffle(unsigned int oid,unsigned int step,unsigned int num,void* out);
-extern void pg_tensor_binaryop(unsigned int oid,unsigned int fn,unsigned int num,void* a1,void* a2);
+extern void pg_tensor_binaryop(int oid,int fn,int c1,void* a1,void* a2);
 extern void pg_tensor_convolve(int oid,void* i1,int n1,int* d1,void* k2,int* d2,int* s3,int* p4,void* o5,int* d5);
 extern void pg_tensor_pool(int oid,int fn,void* i1,int n1,int* d1,int* k2,int* s3,int* p4,void* o5,int* d5);
 extern void pg_tensor_activate(int oid,int fn,int c1,void* a1,float g);

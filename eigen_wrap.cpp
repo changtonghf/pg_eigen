@@ -660,7 +660,7 @@ extern "C" void pg_tensor_shuffle(unsigned int oid,unsigned int step, unsigned i
 }
 
 template<typename T,int L>
-void tensor_binaryop(unsigned int fn,unsigned int m,T* a,T* b)
+void tensor_binaryop(int fn,int m,T* a,T* b)
 {
     Eigen::TensorMap<Eigen::Tensor<T, 1, L>> x(a, m);
     Eigen::TensorMap<Eigen::Tensor<T, 1, L>> y(b, m);
@@ -674,18 +674,18 @@ void tensor_binaryop(unsigned int fn,unsigned int m,T* a,T* b)
         x = x / y;
 }
 
-extern "C" void pg_tensor_binaryop(unsigned int oid,unsigned int fn,unsigned int num,void* a1,void* a2)
+extern "C" void pg_tensor_binaryop(int oid,int fn,int c1,void* a1,void* a2)
 {
     if (oid == 700)
-        tensor_binaryop<float, Eigen::RowMajor>(fn, num, (float*) a1, (float*) a2);
+        tensor_binaryop<float, Eigen::RowMajor>(fn, c1, (float*) a1, (float*) a2);
     else if (oid == 701)
-        tensor_binaryop<double, Eigen::RowMajor>(fn, num, (double*) a1, (double*) a2);
+        tensor_binaryop<double, Eigen::RowMajor>(fn, c1, (double*) a1, (double*) a2);
     else if (oid ==  21)
-        tensor_binaryop<short, Eigen::RowMajor>(fn, num, (short*) a1, (short*) a2);
+        tensor_binaryop<short, Eigen::RowMajor>(fn, c1, (short*) a1, (short*) a2);
     else if (oid ==  23)
-        tensor_binaryop<int, Eigen::RowMajor>(fn, num, (int*) a1, (int*) a2);
+        tensor_binaryop<int, Eigen::RowMajor>(fn, c1, (int*) a1, (int*) a2);
     else if (oid ==  20)
-        tensor_binaryop<long, Eigen::RowMajor>(fn, num, (long*) a1, (long*) a2);
+        tensor_binaryop<long, Eigen::RowMajor>(fn, c1, (long*) a1, (long*) a2);
 }
 
 template<typename T,int L,int M>
