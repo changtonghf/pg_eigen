@@ -22,6 +22,7 @@ extern void pg_tensor_activate(unsigned int oid,unsigned int fn,unsigned int num
 extern void pg_tensor_dropout(unsigned int oid,void* i1,unsigned int n1,unsigned int* d1,float r2,unsigned int* n2,unsigned int s2);
 extern void pg_tensor_matmul(unsigned int oid,unsigned int m1,unsigned int n1,void* i1,unsigned int* d1,void* i2,unsigned int* d2,bool* b2,void* o3,unsigned int* d3);
 extern void pg_tensor_softmax(unsigned int oid,void* in,unsigned int n1,unsigned int* d1,unsigned int r1,void* out);
+extern void pg_tensor_argpos(int oid,int fn,char* in,int n1,int* d1,void* out,int ax);
 
 PG_FUNCTION_INFO_V1(array_reduce);
 PG_FUNCTION_INFO_V1(array_fft);
@@ -34,6 +35,7 @@ PG_FUNCTION_INFO_V1(array_activate);
 PG_FUNCTION_INFO_V1(array_dropout);
 PG_FUNCTION_INFO_V1(array_matmul);
 PG_FUNCTION_INFO_V1(array_softmax);
+PG_FUNCTION_INFO_V1(array_argpos);
 
 Datum array_reduce(PG_FUNCTION_ARGS)
 {
@@ -1117,6 +1119,69 @@ Datum array_softmax(PG_FUNCTION_ARGS)
     memcpy(ARR_DIMS(a2)  , d1, n1 * sizeof(int));
     memcpy(ARR_LBOUND(a2), b1, n1 * sizeof(int));
     memcpy(ARR_DATA_PTR(a2), v2, c1 * sizeof(float8));
+    pfree(v2);
+    PG_RETURN_ARRAYTYPE_P(a2);
+}
+
+Datum array_argpos(PG_FUNCTION_ARGS)
+{
+    ArrayType *a1, *a2;
+    char      *fn, *p1;
+    Oid        t1;
+    int32     *d1,  n1, c1, ax;
+    int32     *d2, *b2, n2, c2, l2, j = 0;
+    void      *v2;
+    instr_time s1,  s2;
+
+    if (PG_ARGISNULL(0))
+        elog(ERROR, "index reduce function name not specified.");
+    fn = text_to_cstring(PG_GETARG_TEXT_P(0));
+    if (strcasecmp(fn, "argmax") != 0 && strcasecmp(fn, "argmin") != 0)
+        elog(ERROR, "\"%s\" is currently not supported in tensor index reduce.", fn);
+    if (PG_ARGISNULL(1)) PG_RETURN_NULL();
+    a1 = PG_GETARG_ARRAYTYPE_P(1);
+    t1 = ARR_ELEMTYPE(a1);
+    if (t1 != INT2OID && t1 != INT4OID && t1 != INT8OID && t1 != FLOAT4OID && t1 != FLOAT8OID)
+        elog(ERROR, "array argument type must be number type.");
+    n1 = ARR_NDIM(a1);
+    d1 = ARR_DIMS(a1);
+    c1 = ArrayGetNItems(n1, d1);
+    p1 = ARR_DATA_PTR(a1);
+    if (PG_ARGISNULL(2))
+        ax = 0;
+    else
+        ax = PG_GETARG_INT32(2);
+    if (ax < 0 || ax >= n1)
+        elog(ERROR, "the ax to reduce across should be within the dimensions of the input tensor.");
+    n2 = n1 - 1;
+    c2 = c1 / d1[ax];
+    d2 = (int32 *) palloc(n2 * sizeof(int32));
+    b2 = (int32 *) palloc(n2 * sizeof(int32));
+    for (uint32 i=0;i < n1;i++)
+    {
+        if (ax == i) continue;
+        d2[j] = d1[i]; b2[j] = 1; j++;
+    }
+    v2 = palloc(c2 * sizeof(int64));
+    l2 = c2 * sizeof(int64) + ARR_OVERHEAD_NONULLS(n2);
+    INSTR_TIME_SET_CURRENT(s1);
+    if (strcasecmp(fn, "argmax") == 0)
+        pg_tensor_argpos(t1, 1, p1, n1, d1, v2, ax);
+    else if (strcasecmp(fn, "argmin") == 0)
+        pg_tensor_argpos(t1, 2, p1, n1, d1, v2, ax);
+    INSTR_TIME_SET_CURRENT(s2);
+    INSTR_TIME_SUBTRACT(s2,s1);
+    ereport(LOG,(errmsg("eigen tensor matrix multiplication spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));
+    a2 = (ArrayType *) palloc(l2);
+    SET_VARSIZE(a2, l2);
+    a2->ndim = n2;
+    a2->dataoffset = 0;
+    a2->elemtype = INT8OID;
+    memcpy(ARR_DIMS(a2)  , d2, n2 * sizeof(int32));
+    memcpy(ARR_LBOUND(a2), b2, n2 * sizeof(int32));
+    memcpy(ARR_DATA_PTR(a2), v2, c2 * sizeof(int64));
+    pfree(b2);
+    pfree(d2);
     pfree(v2);
     PG_RETURN_ARRAYTYPE_P(a2);
 }

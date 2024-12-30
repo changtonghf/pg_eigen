@@ -1114,3 +1114,96 @@ extern "C" void pg_tensor_softmax(unsigned int oid,void* in,unsigned int n1,unsi
             tensor_softmax<long, Eigen::RowMajor, 6>((long*) in, d1, r1, (double*) out);
     }
 }
+
+template<typename T,int L,int M>
+void tensor_argpos(int fn,T* in,int* d1,int ax,long* out)
+{
+    Eigen::array<int, M> m;
+    for (int i=0;i < M;i++) m[i] = d1[i];
+    Eigen::TensorMap<Eigen::Tensor<T, M, L>> x(in, m);
+    Eigen::Tensor<Eigen::DenseIndex, M-1, L> y;
+    if (fn == 1)
+        y = x.argmax(ax);
+    else if (fn == 2)
+        y = x.argmin(ax);
+    std::copy(y.data(), y.data() + y.size(), out);
+}
+
+extern "C" void pg_tensor_argpos(int oid,int fn,char* in,int n1,int* d1,void* out,int ax)
+{
+    if (oid == 700)
+    {
+        if (n1 == 1)
+            tensor_argpos<float, Eigen::RowMajor, 1>(fn, (float*) in, d1, ax, (long*) out);
+        else if (n1 == 2)
+            tensor_argpos<float, Eigen::RowMajor, 2>(fn, (float*) in, d1, ax, (long*) out);
+        else if (n1 == 3)
+            tensor_argpos<float, Eigen::RowMajor, 3>(fn, (float*) in, d1, ax, (long*) out);
+        else if (n1 == 4)
+            tensor_argpos<float, Eigen::RowMajor, 4>(fn, (float*) in, d1, ax, (long*) out);
+        else if (n1 == 5)
+            tensor_argpos<float, Eigen::RowMajor, 5>(fn, (float*) in, d1, ax, (long*) out);
+        else if (n1 == 6)
+            tensor_argpos<float, Eigen::RowMajor, 6>(fn, (float*) in, d1, ax, (long*) out);
+    }
+    else if (oid == 701)
+    {
+        if (n1 == 1)
+            tensor_argpos<double, Eigen::RowMajor, 1>(fn, (double*) in, d1, ax, (long*) out);
+        else if (n1 == 2)
+            tensor_argpos<double, Eigen::RowMajor, 2>(fn, (double*) in, d1, ax, (long*) out);
+        else if (n1 == 3)
+            tensor_argpos<double, Eigen::RowMajor, 3>(fn, (double*) in, d1, ax, (long*) out);
+        else if (n1 == 4)
+            tensor_argpos<double, Eigen::RowMajor, 4>(fn, (double*) in, d1, ax, (long*) out);
+        else if (n1 == 5)
+            tensor_argpos<double, Eigen::RowMajor, 5>(fn, (double*) in, d1, ax, (long*) out);
+        else if (n1 == 6)
+            tensor_argpos<double, Eigen::RowMajor, 6>(fn, (double*) in, d1, ax, (long*) out);
+    }
+    else if (oid ==  21)
+    {
+        if (n1 == 1)
+            tensor_argpos<short, Eigen::RowMajor, 1>(fn, (short*) in, d1, ax, (long*) out);
+        else if (n1 == 2)
+            tensor_argpos<short, Eigen::RowMajor, 2>(fn, (short*) in, d1, ax, (long*) out);
+        else if (n1 == 3)
+            tensor_argpos<short, Eigen::RowMajor, 3>(fn, (short*) in, d1, ax, (long*) out);
+        else if (n1 == 4)
+            tensor_argpos<short, Eigen::RowMajor, 4>(fn, (short*) in, d1, ax, (long*) out);
+        else if (n1 == 5)
+            tensor_argpos<short, Eigen::RowMajor, 5>(fn, (short*) in, d1, ax, (long*) out);
+        else if (n1 == 6)
+            tensor_argpos<short, Eigen::RowMajor, 6>(fn, (short*) in, d1, ax, (long*) out);
+    }
+    else if (oid ==  23)
+    {
+        if (n1 == 1)
+            tensor_argpos<int, Eigen::RowMajor, 1>(fn, (int*) in, d1, ax, (long*) out);
+        else if (n1 == 2)
+            tensor_argpos<int, Eigen::RowMajor, 2>(fn, (int*) in, d1, ax, (long*) out);
+        else if (n1 == 3)
+            tensor_argpos<int, Eigen::RowMajor, 3>(fn, (int*) in, d1, ax, (long*) out);
+        else if (n1 == 4)
+            tensor_argpos<int, Eigen::RowMajor, 4>(fn, (int*) in, d1, ax, (long*) out);
+        else if (n1 == 5)
+            tensor_argpos<int, Eigen::RowMajor, 5>(fn, (int*) in, d1, ax, (long*) out);
+        else if (n1 == 6)
+            tensor_argpos<int, Eigen::RowMajor, 6>(fn, (int*) in, d1, ax, (long*) out);
+    }
+    else if (oid ==  20)
+    {
+        if (n1 == 1)
+            tensor_argpos<long, Eigen::RowMajor, 1>(fn, (long*) in, d1, ax, (long*) out);
+        else if (n1 == 2)
+            tensor_argpos<long, Eigen::RowMajor, 2>(fn, (long*) in, d1, ax, (long*) out);
+        else if (n1 == 3)
+            tensor_argpos<long, Eigen::RowMajor, 3>(fn, (long*) in, d1, ax, (long*) out);
+        else if (n1 == 4)
+            tensor_argpos<long, Eigen::RowMajor, 4>(fn, (long*) in, d1, ax, (long*) out);
+        else if (n1 == 5)
+            tensor_argpos<long, Eigen::RowMajor, 5>(fn, (long*) in, d1, ax, (long*) out);
+        else if (n1 == 6)
+            tensor_argpos<long, Eigen::RowMajor, 6>(fn, (long*) in, d1, ax, (long*) out);
+    }
+}

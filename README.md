@@ -409,3 +409,47 @@ select array_softmax(array[[[-1,0,1,2,3],[-4,-3,-2,-1,0]],[[-5,0,1,2,2],[-4,-2,-
  {{{0.9525741268224333,0.9525741268224334,0.9525741268224331,0.9525741268224333,0.9525741268224333},{0.047425873177566795,0.04742587317756679,0.047425873177566774,0.047425873177566774,0.04742587317756678}},{{0.2689414213699951,0.8807970779778823,0.8807970779778824,0.8807970779778824,0.11920292202211756},{0.731058578630005,0.11920292202211755,0.11920292202211753,0.11920292202211755,0.8807970779778824}}}
 (1 row)
 ```
+### 12. array_argpos
+```sql
+/*
+ * The 1st parameter represents index reduce function ['argmax','argmax'].
+ * The 2nd parameter represents input tensor to be processed.
+ * The 3rd parameter represents dimension index reduce would be performed on.
+ */
+
+select array_argpos('argmax', array[[2,20,30,3,6],[3,11,16,1,8],[14,45,23,5,27]]::float8[], NULL);
+ array_argpos
+--------------
+ {2,2,0,2,2}
+(1 row)
+
+select array_argpos('argmax', array[[2,20,30,3,6],[3,11,16,1,8],[14,45,23,5,27]]::float8[], 0);
+ array_argpos
+--------------
+ {2,2,0,2,2}
+(1 row)
+
+select array_argpos('argmax', array[[2,20,30,3,6],[3,11,16,1,8],[14,45,23,5,27]]::float8[], 1);
+ array_argpos
+--------------
+ {2,2,1}
+(1 row)
+
+select array_argpos('argmin', array[[2,20,30,3,6],[3,11,16,1,8],[14,45,23,5,27]]::float8[], NULL);
+ array_argpos
+--------------
+ {0,1,1,1,0}
+(1 row)
+
+select array_argpos('argmin', array[[2,20,30,3,6],[3,11,16,1,8],[14,45,23,5,27]]::float8[], 0);
+ array_argpos
+--------------
+ {0,1,1,1,0}
+(1 row)
+
+select array_argpos('argmin', array[[2,20,30,3,6],[3,11,16,1,8],[14,45,23,5,27]]::float8[], 1);
+ array_argpos
+--------------
+ {0,3,3}
+(1 row)
+```
