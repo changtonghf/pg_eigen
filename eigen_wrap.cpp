@@ -4,11 +4,11 @@
 #include <Eigen/Core>
 #include <unsupported/Eigen/CXX11/Tensor>
 
-template<typename T,int L,unsigned int M>
-void tensor_reduce(unsigned int fn,T* in,unsigned int* d1,T* out)
+template<typename T,int L,int M>
+void tensor_reduce(int fn,T* in,int* d1,T* out)
 {
-    Eigen::array<unsigned int, M> m;
-    for (unsigned int i=0;i < M;i++) m[i] = d1[i];
+    Eigen::array<int, M> m;
+    for (int i=0;i < M;i++) m[i] = d1[i];
     Eigen::TensorMap<Eigen::Tensor<T, M, L>> x(in, m);
     if (fn == 1)
     {
@@ -37,14 +37,14 @@ void tensor_reduce(unsigned int fn,T* in,unsigned int* d1,T* out)
     }
 }
 
-template<typename T,int L,unsigned int M,unsigned int N>
-void tensor_reduce(unsigned int fn,T* in,unsigned int* d1,T* out,unsigned int* d2)
+template<typename T,int L,int M,int N>
+void tensor_reduce(int fn,T* in,int* d1,T* out,int* d2)
 {
-    Eigen::array<unsigned int, M> m;
-    for (unsigned int i=0;i < M;i++) m[i] = d1[i];
+    Eigen::array<int, M> m;
+    for (int i=0;i < M;i++) m[i] = d1[i];
     Eigen::TensorMap<Eigen::Tensor<T, M, L>> x(in, m);
-    Eigen::array<unsigned int, N> r;
-    for (unsigned int i=0;i < N;i++) r[i] = d2[i];
+    Eigen::array<int, N> r;
+    for (int i=0;i < N;i++) r[i] = d2[i];
     if (fn == 1)
     {
         Eigen::Tensor<T, M-N, L> y = x.sum(r);
@@ -72,7 +72,7 @@ void tensor_reduce(unsigned int fn,T* in,unsigned int* d1,T* out,unsigned int* d
     }
 }
 
-extern "C" void pg_tensor_reduce(unsigned int oid,unsigned int fn,char* in,unsigned int n1,unsigned int* d1,void* out,unsigned int n2,unsigned int* d2)
+extern "C" void pg_tensor_reduce(int oid,int fn,char* in,int n1,int* d1,void* out,int n2,int* d2)
 {
     if (oid == 700)
     {
