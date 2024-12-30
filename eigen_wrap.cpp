@@ -862,17 +862,17 @@ extern "C" void pg_tensor_activate(unsigned int oid,unsigned int fn,unsigned int
         tensor_activate<double, Eigen::RowMajor>(fn, num, (double*) a1, (double) g);
 }
 
-template<typename T,int L,unsigned int M>
-void tensor_dropout(T* i1,unsigned int* d1,T r2,unsigned int* n2,unsigned int s2)
+template<typename T,int L,int M>
+void tensor_dropout(T* i1,int* d1,T r2,int* n2,int s2)
 {
-    Eigen::array<unsigned int, M> m;
-    for (unsigned int i=0;i < M;i++) m[i] = d1[i];
+    Eigen::array<int, M> m;
+    for (int i=0;i < M;i++) m[i] = d1[i];
     Eigen::TensorMap<Eigen::Tensor<T, M, L>> in(i1, m);
-    Eigen::array<unsigned int, M> lo, hi, bc;
-    for (unsigned int i=0;i < M;i++) lo[i] = 0;
+    Eigen::array<int, M> lo, hi, bc;
+    for (int i=0;i < M;i++) lo[i] = 0;
     if (n2 == NULL)
     {
-        for (unsigned int i=0;i < M;i++)
+        for (int i=0;i < M;i++)
         {
             hi[i] = d1[i];
             bc[i] = 1;
@@ -880,7 +880,7 @@ void tensor_dropout(T* i1,unsigned int* d1,T r2,unsigned int* n2,unsigned int s2
     }
     else
     {
-        for (unsigned int i=0;i < M;i++)
+        for (int i=0;i < M;i++)
         {
             hi[i] = n2[i];
             bc[i] = d1[i] / n2[i];
@@ -893,7 +893,7 @@ void tensor_dropout(T* i1,unsigned int* d1,T r2,unsigned int* n2,unsigned int s2
     in = in / in.constant(1 - r2) * km.broadcast(bc);
 }
 
-extern "C" void pg_tensor_dropout(unsigned int oid,void* i1,unsigned int n1,unsigned int* d1,float r2,unsigned int* n2,unsigned int s2)
+extern "C" void pg_tensor_dropout(int oid,void* i1,int n1,int* d1,float r2,int* n2,int s2)
 {
     if (oid == 700)
     {

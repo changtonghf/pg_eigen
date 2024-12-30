@@ -19,7 +19,7 @@ extern void pg_tensor_binaryop(unsigned int oid,unsigned int fn,unsigned int num
 extern void pg_tensor_convolve(unsigned int oid,void* i1,unsigned int n1,unsigned int* d1,void* k2,unsigned int* d2,unsigned int* s3,unsigned int* p4,void* o5,unsigned int* d5);
 extern void pg_tensor_pool(unsigned int oid,unsigned int fn,void* i1,unsigned int n1,unsigned int* d1,unsigned int* k2,unsigned int* s3,unsigned int* p4,void* o5,unsigned int* d5);
 extern void pg_tensor_activate(unsigned int oid,unsigned int fn,unsigned int num,void* a1,float g);
-extern void pg_tensor_dropout(unsigned int oid,void* i1,unsigned int n1,unsigned int* d1,float r2,unsigned int* n2,unsigned int s2);
+extern void pg_tensor_dropout(int oid,void* i1,int n1,int* d1,float r2,int* n2,int s2);
 extern void pg_tensor_matmul(int oid,int m1,int n1,void* i1,int* d1,void* i2,int* d2,bool* b2,void* o3,int* d3);
 extern void pg_tensor_softmax(int oid,void* in,int n1,int* d1,int ax,void* out);
 extern void pg_tensor_argpos(int oid,int fn,char* in,int n1,int* d1,void* out,int ax);
@@ -868,10 +868,10 @@ Datum array_dropout(PG_FUNCTION_ARGS)
 {
     ArrayType *a1, *a2;
     char      *p1;
-    uint32    *p2,  s2;
     Oid        t1;
     float4     r2;
     int        n1, *d1, n2, *d2, c2;
+    int       *p2,  s2;
     instr_time s0,  s1;
 
     if (PG_ARGISNULL(0)) PG_RETURN_NULL();
@@ -900,9 +900,9 @@ Datum array_dropout(PG_FUNCTION_ARGS)
         n2 = ARR_NDIM(a2);
         d2 = ARR_DIMS(a2);
         c2 = ArrayGetNItems(n2, d2);
-        p2 = (uint32 *)ARR_DATA_PTR(a2);
+        p2 = (int*)ARR_DATA_PTR(a2);
         if (n1 != c2) elog(ERROR, "noise shape is unreasonable.");
-        for (uint32 i=0;i < c2;i++)
+        for (int i=0;i < c2;i++)
         {
             if ((p2[i] <= 0) || (p2[i] > d1[i]) || (p2[i] != 1 && d1[i] % p2[i] != 0))
                 elog(ERROR, "noise shape is unreasonable.");
@@ -914,7 +914,7 @@ Datum array_dropout(PG_FUNCTION_ARGS)
     if (s2 < 0) elog(ERROR, "random seed is unreasonable.");
 
     INSTR_TIME_SET_CURRENT(s0);
-    pg_tensor_dropout(t1, (void*) p1, n1, (unsigned int*) d1, r2, (unsigned int*) p2, s2);
+    pg_tensor_dropout(t1, (void*) p1, n1, d1, r2, p2, s2);
     INSTR_TIME_SET_CURRENT(s1);
     INSTR_TIME_SUBTRACT(s1,s0);
     ereport(LOG,(errmsg("eigen dropout spend time %lu us", INSTR_TIME_GET_MICROSEC(s1))));
