@@ -20,7 +20,7 @@ extern void pg_tensor_convolve(unsigned int oid,void* i1,unsigned int n1,unsigne
 extern void pg_tensor_pool(unsigned int oid,unsigned int fn,void* i1,unsigned int n1,unsigned int* d1,unsigned int* k2,unsigned int* s3,unsigned int* p4,void* o5,unsigned int* d5);
 extern void pg_tensor_activate(unsigned int oid,unsigned int fn,unsigned int num,void* a1,float g);
 extern void pg_tensor_dropout(unsigned int oid,void* i1,unsigned int n1,unsigned int* d1,float r2,unsigned int* n2,unsigned int s2);
-extern void pg_tensor_matmul(unsigned int oid,unsigned int m1,unsigned int n1,void* i1,unsigned int* d1,void* i2,unsigned int* d2,bool* b2,void* o3,unsigned int* d3);
+extern void pg_tensor_matmul(int oid,int m1,int n1,void* i1,int* d1,void* i2,int* d2,bool* b2,void* o3,int* d3);
 extern void pg_tensor_softmax(int oid,void* in,int n1,int* d1,int ax,void* out);
 extern void pg_tensor_argpos(int oid,int fn,char* in,int n1,int* d1,void* out,int ax);
 
@@ -1051,7 +1051,7 @@ Datum array_matmul(PG_FUNCTION_ARGS)
     }
 
     INSTR_TIME_SET_CURRENT(s1);
-    pg_tensor_matmul(t1, p3[0], n1, (void*) p1, (unsigned int*) d1, (void*) p2, (unsigned int*) d2, p4, v5, (unsigned int*) d5);
+    pg_tensor_matmul(t1, p3[0], n1, (void*) p1, d1, (void*) p2, d2, p4, v5, d5);
     INSTR_TIME_SET_CURRENT(s2);
     INSTR_TIME_SUBTRACT(s2,s1);
     ereport(LOG,(errmsg("eigen tensor matrix multiplication spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));

@@ -928,13 +928,13 @@ extern "C" void pg_tensor_dropout(unsigned int oid,void* i1,unsigned int n1,unsi
 }
 
 template<typename T,int L>
-void tensor_rmatmul(unsigned int n1,T* i1,unsigned int* d1,T* i2,unsigned int* d2,bool* b2,T* o3,unsigned int* d3)
+void tensor_rmatmul(int n1,T* i1,int* d1,T* i2,int* d2,bool* b2,T* o3,int* d3)
 {
-    unsigned int x1 = 1;
-    for (unsigned int i=0;i < n1-2;i++) x1 *= d1[i];
-    Eigen::array<unsigned int, 3> m = {{x1, d1[n1-2], d1[n1-1]}};
+    int x1 = 1;
+    for (int i=0;i < n1-2;i++) x1 *= d1[i];
+    Eigen::array<int, 3> m = {{x1, d1[n1-2], d1[n1-1]}};
     Eigen::TensorMap<Eigen::Tensor<T, 3, L>> a(i1, m);
-    Eigen::array<unsigned int, 3> n = {{x1, d2[n1-2], d2[n1-1]}};
+    Eigen::array<int, 3> n = {{x1, d2[n1-2], d2[n1-1]}};
     Eigen::TensorMap<Eigen::Tensor<T, 3, L>> b(i2, n);
     Eigen::Tensor<T, 3, L> lt = a, rt = b;
     if (b2 != NULL)
@@ -943,20 +943,20 @@ void tensor_rmatmul(unsigned int n1,T* i1,unsigned int* d1,T* i2,unsigned int* d
         if (b2[1]) rt = b.shuffle(Eigen::DSizes<Eigen::DenseIndex, 3> (0,2,1));
     }
     Eigen::array<Eigen::Tensor<float, 1>::DimensionPair, 1> d = {Eigen::Tensor<float, 1>::DimensionPair(1, 0)};
-    Eigen::array<unsigned int, 3> o = {{x1, d3[n1-2], d3[n1-1]}};
+    Eigen::array<int, 3> o = {{x1, d3[n1-2], d3[n1-1]}};
     Eigen::TensorMap<Eigen::Tensor<T, 3, L>> ot(o3, o);
     for (int i = 0; i < ot.dimension(0); ++i)
         ot.template chip<0>(i) = lt.template chip<0>(i).contract(rt.template chip<0>(i),d);
 }
 
 template<typename T,int L>
-void tensor_cmatmul(unsigned int n1,std::complex<T>* i1,unsigned int* d1,std::complex<T>* i2,unsigned int* d2,bool* b2,std::complex<T>* o3,unsigned int* d3)
+void tensor_cmatmul(int n1,std::complex<T>* i1,int* d1,std::complex<T>* i2,int* d2,bool* b2,std::complex<T>* o3,int* d3)
 {
-    unsigned int x1 = 1;
-    for (unsigned int i=0;i < n1-3;i++) x1 *= d1[i];
-    Eigen::array<unsigned int, 3> m = {{x1, d1[n1-3], d1[n1-2]}};
+    int x1 = 1;
+    for (int i=0;i < n1-3;i++) x1 *= d1[i];
+    Eigen::array<int, 3> m = {{x1, d1[n1-3], d1[n1-2]}};
     Eigen::TensorMap<Eigen::Tensor<std::complex<T>, 3, L>> a(i1, m);
-    Eigen::array<unsigned int, 3> n = {{x1, d2[n1-3], d2[n1-2]}};
+    Eigen::array<int, 3> n = {{x1, d2[n1-3], d2[n1-2]}};
     Eigen::TensorMap<Eigen::Tensor<std::complex<T>, 3, L>> b(i2, n);
     Eigen::Tensor<std::complex<T>, 3, L> lt = a, rt = b;
     if (b2 != NULL)
@@ -971,13 +971,13 @@ void tensor_cmatmul(unsigned int n1,std::complex<T>* i1,unsigned int* d1,std::co
             rt = b.shuffle(Eigen::DSizes<Eigen::DenseIndex, 3> (0,2,1));
     }
     Eigen::array<Eigen::Tensor<float, 1>::DimensionPair, 1> d = {Eigen::Tensor<float, 1>::DimensionPair(1, 0)};
-    Eigen::array<unsigned int, 3> o = {{x1, d3[n1-3], d3[n1-2]}};
+    Eigen::array<int, 3> o = {{x1, d3[n1-3], d3[n1-2]}};
     Eigen::TensorMap<Eigen::Tensor<std::complex<T>, 3, L>> ot(o3, o);
     for (int i = 0; i < ot.dimension(0); ++i)
         ot.template chip<0>(i) = lt.template chip<0>(i).contract(rt.template chip<0>(i),d);
 }
 
-extern "C" void pg_tensor_matmul(unsigned int oid,unsigned int m1,unsigned int n1,void* i1,unsigned int* d1,void* i2,unsigned int* d2,bool* b2,void* o3,unsigned int* d3)
+extern "C" void pg_tensor_matmul(int oid,int m1,int n1,void* i1,int* d1,void* i2,int* d2,bool* b2,void* o3,int* d3)
 {
     if (oid == 700)
     {
