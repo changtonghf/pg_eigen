@@ -18,7 +18,7 @@ extern void pg_tensor_shuffle(unsigned int oid,unsigned int step,unsigned int nu
 extern void pg_tensor_binaryop(unsigned int oid,unsigned int fn,unsigned int num,void* a1,void* a2);
 extern void pg_tensor_convolve(unsigned int oid,void* i1,unsigned int n1,unsigned int* d1,void* k2,unsigned int* d2,unsigned int* s3,unsigned int* p4,void* o5,unsigned int* d5);
 extern void pg_tensor_pool(unsigned int oid,unsigned int fn,void* i1,unsigned int n1,unsigned int* d1,unsigned int* k2,unsigned int* s3,unsigned int* p4,void* o5,unsigned int* d5);
-extern void pg_tensor_activate(unsigned int oid,unsigned int fn,unsigned int num,void* a1,float g);
+extern void pg_tensor_activate(int oid,int fn,int c1,void* a1,float g);
 extern void pg_tensor_dropout(int oid,void* i1,int n1,int* d1,float r2,int* n2,int s2);
 extern void pg_tensor_matmul(int oid,int m1,int n1,void* i1,int* d1,void* i2,int* d2,bool* b2,void* o3,int* d3);
 extern void pg_tensor_softmax(int oid,void* in,int n1,int* d1,int ax,void* out);

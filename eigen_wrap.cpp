@@ -829,7 +829,7 @@ extern "C" void pg_tensor_pool(unsigned int oid,unsigned int fn,void* i1,unsigne
 }
 
 template<typename T,int L>
-void tensor_activate(unsigned int fn,unsigned int m,T* a,T g)
+void tensor_activate(int fn,int m,T* a,T g)
 {
     Eigen::TensorMap<Eigen::Tensor<T, 1, L>> x(a, m);
     switch (fn)
@@ -854,12 +854,12 @@ void tensor_activate(unsigned int fn,unsigned int m,T* a,T g)
     }
 }
 
-extern "C" void pg_tensor_activate(unsigned int oid,unsigned int fn,unsigned int num,void* a1,float g)
+extern "C" void pg_tensor_activate(int oid,int fn,int c1,void* a1,float g)
 {
     if (oid == 700)
-        tensor_activate<float, Eigen::RowMajor>(fn, num, (float*) a1, g);
+        tensor_activate<float, Eigen::RowMajor>(fn, c1, (float*) a1, g);
     else if (oid == 701)
-        tensor_activate<double, Eigen::RowMajor>(fn, num, (double*) a1, (double) g);
+        tensor_activate<double, Eigen::RowMajor>(fn, c1, (double*) a1, (double) g);
 }
 
 template<typename T,int L,int M>
