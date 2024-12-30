@@ -21,7 +21,7 @@ extern void pg_tensor_pool(unsigned int oid,unsigned int fn,void* i1,unsigned in
 extern void pg_tensor_activate(unsigned int oid,unsigned int fn,unsigned int num,void* a1,float g);
 extern void pg_tensor_dropout(unsigned int oid,void* i1,unsigned int n1,unsigned int* d1,float r2,unsigned int* n2,unsigned int s2);
 extern void pg_tensor_matmul(unsigned int oid,unsigned int m1,unsigned int n1,void* i1,unsigned int* d1,void* i2,unsigned int* d2,bool* b2,void* o3,unsigned int* d3);
-extern void pg_tensor_softmax(unsigned int oid,void* in,unsigned int n1,unsigned int* d1,unsigned int r1,void* out);
+extern void pg_tensor_softmax(int oid,void* in,int n1,int* d1,int ax,void* out);
 extern void pg_tensor_argpos(int oid,int fn,char* in,int n1,int* d1,void* out,int ax);
 
 PG_FUNCTION_INFO_V1(array_reduce);
@@ -1084,7 +1084,7 @@ Datum array_softmax(PG_FUNCTION_ARGS)
     ArrayType *a1, *a2;
     char      *p1;
     Oid        t1;
-    int32     *d1, *b1, n1, c1, r1, l2;
+    int32     *d1, *b1, n1, c1, l2, ax;
     void      *v2;
     instr_time s1,  s2;
 
@@ -1099,15 +1099,15 @@ Datum array_softmax(PG_FUNCTION_ARGS)
     c1 = ArrayGetNItems(n1, d1);
     p1 = ARR_DATA_PTR(a1);
     if (PG_ARGISNULL(1))
-        r1 = n1-1;
+        ax = n1-1;
     else
-        r1 = PG_GETARG_INT32(1);
-    if (r1 >= n1)
-        elog(ERROR, "the second parameter's value range should be within the dimensions of the first parameter.");
+        ax = PG_GETARG_INT32(1);
+    if (ax < 0 || ax >= n1)
+        elog(ERROR, "the axis to reduce sum across should be within the dimensions of the input tensor.");
     v2 = palloc(c1 * sizeof(float8));
     l2 = c1 * sizeof(float8) + ARR_OVERHEAD_NONULLS(n1);
     INSTR_TIME_SET_CURRENT(s1);
-    pg_tensor_softmax(t1, (void*) p1, n1, (unsigned int*) d1, (unsigned int) r1, v2);
+    pg_tensor_softmax(t1, (void*) p1, n1, d1, ax, v2);
     INSTR_TIME_SET_CURRENT(s2);
     INSTR_TIME_SUBTRACT(s2,s1);
     ereport(LOG,(errmsg("eigen tensor matrix multiplication spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));
@@ -1116,8 +1116,8 @@ Datum array_softmax(PG_FUNCTION_ARGS)
     a2->ndim = n1;
     a2->dataoffset = 0;
     a2->elemtype = FLOAT8OID;
-    memcpy(ARR_DIMS(a2)  , d1, n1 * sizeof(int));
-    memcpy(ARR_LBOUND(a2), b1, n1 * sizeof(int));
+    memcpy(ARR_DIMS(a2)  , d1, n1 * sizeof(int32));
+    memcpy(ARR_LBOUND(a2), b1, n1 * sizeof(int32));
     memcpy(ARR_DATA_PTR(a2), v2, c1 * sizeof(float8));
     pfree(v2);
     PG_RETURN_ARRAYTYPE_P(a2);
