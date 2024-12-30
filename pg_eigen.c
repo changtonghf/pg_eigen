@@ -13,7 +13,7 @@ PG_MODULE_MAGIC;
 
 extern void pg_tensor_reduce(unsigned int oid,unsigned int fn,char* in,unsigned int n1,unsigned int* d1,void* out,unsigned int n2,unsigned int* d2);
 extern void pg_tensor_fft(unsigned int oid,bool forward,char* in,unsigned int n1,unsigned int* d1,void* out,unsigned int n2,unsigned int* d2);
-extern void pg_tensor_random(unsigned int fn,unsigned int num,double* out,double a1,double b1,int s1);
+extern void pg_tensor_random(int fn,int c1,double* out,double a1,double b1,int s1);
 extern void pg_tensor_shuffle(int oid,int s1,int c1,void* out);
 extern void pg_tensor_binaryop(int oid,int fn,int c1,void* a1,void* a2);
 extern void pg_tensor_convolve(int oid,void* i1,int n1,int* d1,void* k2,int* d2,int* s3,int* p4,void* o5,int* d5);
@@ -305,8 +305,8 @@ Datum array_random(PG_FUNCTION_ARGS)
 {
     ArrayType *a1, *a2;
     char      *fn;
-    uint32    *p1;
-    int        n1, *d1, c1, l2, *b2, *d2, n2 = 1, s;
+    int        n1, *d1, *p1, c1;
+    int        l2, *b2, *d2, c2 = 1, s;
     float8     a, b, *v2;
 
     if (PG_ARGISNULL(0))
@@ -320,7 +320,7 @@ Datum array_random(PG_FUNCTION_ARGS)
     n1 = ARR_NDIM(a1);
     d1 = ARR_DIMS(a1);
     c1 = ArrayGetNItems(n1, d1);
-    p1 = (uint32 *)ARR_DATA_PTR(a1);
+    p1 = (int*)ARR_DATA_PTR(a1);
     if (PG_ARGISNULL(2))
     {
         if (strcasecmp(fn, "random_gamma") == 0)
@@ -347,20 +347,20 @@ Datum array_random(PG_FUNCTION_ARGS)
     {
         d2[i] = p1[i];
         b2[i] = 1;
-        n2 *= p1[i];
+        c2 *= p1[i];
     }
-    v2 = (float8 *) palloc(n2 * sizeof(float8));
+    v2 = (float8 *) palloc(c2 * sizeof(float8));
 
     if (strcasecmp(fn, "random_normal") == 0)
-        pg_tensor_random(1, n2, v2, a, b, s);
+        pg_tensor_random(1, c2, v2, a, b, s);
     else if (strcasecmp(fn, "truncated_normal") == 0)
-        pg_tensor_random(2, n2, v2, a, b, s);
+        pg_tensor_random(2, c2, v2, a, b, s);
     else if (strcasecmp(fn, "random_uniform") == 0)
-        pg_tensor_random(3, n2, v2, a, b, s);
+        pg_tensor_random(3, c2, v2, a, b, s);
     else if (strcasecmp(fn, "random_gamma") == 0)
-        pg_tensor_random(4, n2, v2, a, b, s);
+        pg_tensor_random(4, c2, v2, a, b, s);
 
-    l2 = n2 * sizeof(float8) + ARR_OVERHEAD_NONULLS(c1);
+    l2 = c2 * sizeof(float8) + ARR_OVERHEAD_NONULLS(c1);
     a2 = (ArrayType *) palloc0(l2);
     SET_VARSIZE(a2, l2);
     a2->ndim = c1;
@@ -368,7 +368,7 @@ Datum array_random(PG_FUNCTION_ARGS)
     a2->elemtype = FLOAT8OID;
     memcpy(ARR_DIMS(a2)  , d2, c1 * sizeof(int));
     memcpy(ARR_LBOUND(a2), b2, c1 * sizeof(int));
-    memcpy(ARR_DATA_PTR(a2), v2, n2 * sizeof(float8));
+    memcpy(ARR_DATA_PTR(a2), v2, c2 * sizeof(float8));
     pfree(v2);
     pfree(b2);
     pfree(d2);
