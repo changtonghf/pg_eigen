@@ -688,38 +688,38 @@ extern "C" void pg_tensor_binaryop(unsigned int oid,unsigned int fn,unsigned int
         tensor_binaryop<long, Eigen::RowMajor>(fn, num, (long*) a1, (long*) a2);
 }
 
-template<typename T,int L,unsigned int M>
-void tensor_convolve(T* i1,unsigned int* d1,T* k2,unsigned int* d2,unsigned int* s3,unsigned int* p4,T* o5,unsigned int* d5)
+template<typename T,int L,int M>
+void tensor_convolve(T* i1,int* d1,T* k2,int* d2,int* s3,int* p4,T* o5,int* d5)
 {
-    Eigen::array<unsigned int, M> m;
-    for (unsigned int i=0;i < M;i++) m[i] = d1[i];
+    Eigen::array<int, M> m;
+    for (int i=0;i < M;i++) m[i] = d1[i];
     Eigen::TensorMap<Eigen::Tensor<T, M, L>> in(i1, m);
-    Eigen::array<unsigned int, M> n;
-    for (unsigned int i=0;i < M;i++) n[i] = d2[i];
+    Eigen::array<int, M> n;
+    for (int i=0;i < M;i++) n[i] = d2[i];
     Eigen::TensorMap<Eigen::Tensor<T, M, L>> kr(k2, n);
     Eigen::array<std::pair<ptrdiff_t, ptrdiff_t>, M-1> pd;
     if (p4 == NULL)
     {
-        for (unsigned int i=0;i < M-1;i++)
+        for (int i=0;i < M-1;i++)
             pd[i] = std::make_pair((ptrdiff_t)0,(ptrdiff_t)0);
     }
     else
     {
-        for (unsigned int i=0;i < M-1;i++)
+        for (int i=0;i < M-1;i++)
             pd[i] = std::make_pair((ptrdiff_t)p4[2*i],(ptrdiff_t)p4[2*i+1]);
     }
     Eigen::array<ptrdiff_t, M-1> cd;
-    for (unsigned int i=0;i < M-1;i++) cd[i] = i;
+    for (int i=0;i < M-1;i++) cd[i] = i;
     Eigen::array<ptrdiff_t, M-1> st;
     if (s3 == NULL)
-        for (unsigned int i=0;i < M-1;i++) st[i] = 1;
+        for (int i=0;i < M-1;i++) st[i] = 1;
     else
-        for (unsigned int i=0;i < M-1;i++) st[i] = s3[i];
-    Eigen::array<unsigned int, M-2> x;
-    for (unsigned int i=0;i < M-2;i++) x[i] = d5[i+1];
-    Eigen::array<unsigned int, M> z;
+        for (int i=0;i < M-1;i++) st[i] = s3[i];
+    Eigen::array<int, M-2> x;
+    for (int i=0;i < M-2;i++) x[i] = d5[i+1];
+    Eigen::array<int, M> z;
     z[0] = d5[0];z[1] = d5[M-1];
-    for (unsigned int i=2;i < M;i++) z[i] = d5[i-1];
+    for (int i=2;i < M;i++) z[i] = d5[i-1];
     Eigen::TensorMap<Eigen::Tensor<T, M, L>> ot(o5, z);
     for (int i = 0; i < in.dimension(0); i++)
     {
@@ -732,12 +732,12 @@ void tensor_convolve(T* i1,unsigned int* d1,T* k2,unsigned int* d2,unsigned int*
     }
     Eigen::DSizes<Eigen::DenseIndex, M> si;
     si[0] = 0;si[M-1] = 1;
-    for (unsigned int i=1;i < M-1;i++) si[i] = i+1;
+    for (int i=1;i < M-1;i++) si[i] = i+1;
     Eigen::Tensor<T, M, L> fo = ot.shuffle(si);
     std::copy(fo.data(), fo.data() + fo.size(), o5);
 }
 
-extern "C" void pg_tensor_convolve(unsigned int oid,void* i1,unsigned int n1,unsigned int* d1,void* k2,unsigned int* d2,unsigned int* s3,unsigned int* p4,void* o5,unsigned int* d5)
+extern "C" void pg_tensor_convolve(int oid,void* i1,int n1,int* d1,void* k2,int* d2,int* s3,int* p4,void* o5,int* d5)
 {
     if (oid == 700)
     {

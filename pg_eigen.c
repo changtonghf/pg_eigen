@@ -16,7 +16,7 @@ extern void pg_tensor_fft(unsigned int oid,bool forward,char* in,unsigned int n1
 extern void pg_tensor_random(unsigned int fn,unsigned int num,double* out,double a1,double b1,int s1);
 extern void pg_tensor_shuffle(unsigned int oid,unsigned int step,unsigned int num,void* out);
 extern void pg_tensor_binaryop(unsigned int oid,unsigned int fn,unsigned int num,void* a1,void* a2);
-extern void pg_tensor_convolve(unsigned int oid,void* i1,unsigned int n1,unsigned int* d1,void* k2,unsigned int* d2,unsigned int* s3,unsigned int* p4,void* o5,unsigned int* d5);
+extern void pg_tensor_convolve(int oid,void* i1,int n1,int* d1,void* k2,int* d2,int* s3,int* p4,void* o5,int* d5);
 extern void pg_tensor_pool(int oid,int fn,void* i1,int n1,int* d1,int* k2,int* s3,int* p4,void* o5,int* d5);
 extern void pg_tensor_activate(int oid,int fn,int c1,void* a1,float g);
 extern void pg_tensor_dropout(int oid,void* i1,int n1,int* d1,float r2,int* n2,int s2);
@@ -460,10 +460,9 @@ Datum array_convolve(PG_FUNCTION_ARGS)
 {
     ArrayType *a1, *a2, *a3, *a5;
     char      *df, *pd, *p1, *p2;
-    int32     *p3;
     void      *p5;
     Oid        t1,  t2;
-    int        n1, *d1, n2, *d2, n3, *d3, c3, c4, *p4;
+    int        n1, *d1, n2, *d2, n3, *d3, c3, c4, *p3, *p4;
     int        n5, *d5, *b5, c5 = 1, l5, s[6] = {0,0,0,0,0,0};
     instr_time s1,  s2;
 
@@ -491,7 +490,7 @@ Datum array_convolve(PG_FUNCTION_ARGS)
         if (n3 != 1) elog(ERROR, "strides shape must be one dimension.");
         d3 = ARR_DIMS(a3);
         c3 = ArrayGetNItems(n3, d3);
-        p3 = (int32 *) ARR_DATA_PTR(a3);
+        p3 = (int*)ARR_DATA_PTR(a3);
     }
     if (PG_ARGISNULL(4))
         elog(ERROR, "padding type not specified.");
@@ -615,7 +614,7 @@ Datum array_convolve(PG_FUNCTION_ARGS)
     }
 
     INSTR_TIME_SET_CURRENT(s1);
-    pg_tensor_convolve(t1, (void*) p1, n1, (unsigned int*)d1, (void*) p2, (unsigned int*)d2, (unsigned int*) p3, (unsigned int*) p4, (void*) p5, (unsigned int*)d5);
+    pg_tensor_convolve(t1, (void*) p1, n1, d1, (void*) p2, d2, p3, p4, (void*) p5, d5);
     INSTR_TIME_SET_CURRENT(s2);
     INSTR_TIME_SUBTRACT(s2,s1);
     ereport(LOG,(errmsg("eigen convolution spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));
