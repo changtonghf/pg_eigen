@@ -12,7 +12,7 @@ PG_MODULE_MAGIC;
 #endif
 
 extern void pg_tensor_reduce(unsigned int oid,unsigned int fn,char* in,unsigned int n1,unsigned int* d1,void* out,unsigned int n2,unsigned int* d2);
-extern void pg_tensor_fft(unsigned int oid,bool forward,char* in,unsigned int n1,unsigned int* d1,void* out,unsigned int n2,unsigned int* d2);
+extern void pg_tensor_fft(int oid,bool forward,char* in,int n1,int* d1,void* out,int n2,int* d2);
 extern void pg_tensor_random(int fn,int c1,double* out,double a1,double b1,int s1);
 extern void pg_tensor_shuffle(int oid,int s1,int c1,void* out);
 extern void pg_tensor_binaryop(int oid,int fn,int c1,void* a1,void* a2);
@@ -196,14 +196,13 @@ Datum array_reduce(PG_FUNCTION_ARGS)
 Datum array_fft(PG_FUNCTION_ARGS)
 {
     ArrayType *a1, *a2, *a3;
-    char      *v1;
+    char      *p1;
     bool       fw;
     Oid        t1,  t2;
-    int        n1,  n2,  c2,  l3,  m3 = 0, n3 = 1;
-    int       *d1 = NULL, *d2 = NULL, *d3, *b3, x[6] = {0,0,0,0,0,0};
-    uint32    *p2 = NULL;
+    int        n1,  n2,  c2,  l3,  n3 = 0, c3 = 1;
+    int       *d1, *d2, *p2, *d3, *b3, x[6] = {0,0,0,0,0,0};
     instr_time s1,  s2;
-    void      *v2;
+    void      *v3;
 
     if (PG_ARGISNULL(0))
         elog(ERROR, "discrete fourier transform direction not specified.");
@@ -219,7 +218,7 @@ Datum array_fft(PG_FUNCTION_ARGS)
         elog(ERROR, "the second array elements can't be null.");
     n1 = ARR_NDIM(a1);
     d1 = ARR_DIMS(a1);
-    v1 = ARR_DATA_PTR(a1);
+    p1 = ARR_DATA_PTR(a1);
 
     a2 = PG_GETARG_ARRAYTYPE_P(2);
     if (ARR_HASNULL(a2))
@@ -236,7 +235,7 @@ Datum array_fft(PG_FUNCTION_ARGS)
         elog(ERROR, "the length of the third argument should be either equal to or one less than the dimension of the second argument.");
     if (n1 == c2 + 1 && d1[n1-1] != 2)
         elog(ERROR, "the second argument's last dimension should only have two elements representing a complex.");
-    p2 = (uint32 *)ARR_DATA_PTR(a2);
+    p2 = (int*)ARR_DATA_PTR(a2);
     for (uint32 i=0;i < c2;i++)
     {
         if (p2[i] > n1 && p2[i] < 0)
@@ -249,53 +248,53 @@ Datum array_fft(PG_FUNCTION_ARGS)
     }
     for (uint32 i=0;i < n1;i++)
     {
-        x[m3] = d1[i];
-        n3 *= d1[i];
-        m3++;
+        x[n3] = d1[i];
+        c3 *= d1[i];
+        n3++;
     }
     if (n1 == c2)
     {
         x[n1] = 2;
-        n3 *= 2;
-        m3++;
+        c3 *= 2;
+        n3++;
     }
 
     if (t1 == FLOAT4OID)
     {
-        v2 = palloc(n3 * sizeof(float4));
-        l3 = n3 * sizeof(float4) + ARR_OVERHEAD_NONULLS(m3);
+        v3 = palloc(c3 * sizeof(float4));
+        l3 = c3 * sizeof(float4) + ARR_OVERHEAD_NONULLS(n3);
     }
     else if (t1 == FLOAT8OID)
     {
-        v2 = palloc(n3 * sizeof(float8));
-        l3 = n3 * sizeof(float8) + ARR_OVERHEAD_NONULLS(m3);
+        v3 = palloc(c3 * sizeof(float8));
+        l3 = c3 * sizeof(float8) + ARR_OVERHEAD_NONULLS(n3);
     }
-    d3 = (int *) palloc(m3 * sizeof(int));
-    b3 = (int *) palloc(m3 * sizeof(int));
-    for (uint32 i=0;i < m3;i++)
+    d3 = (int *) palloc(n3 * sizeof(int));
+    b3 = (int *) palloc(n3 * sizeof(int));
+    for (uint32 i=0;i < n3;i++)
     {
         d3[i] = x[i];
         b3[i] = 1;
     }
 
     INSTR_TIME_SET_CURRENT(s1);
-    pg_tensor_fft(t1, fw, v1, n1, (unsigned int*)d1, v2, c2, p2);
+    pg_tensor_fft(t1, fw, p1, n1, d1, v3, c2, p2);
     INSTR_TIME_SET_CURRENT(s2);
     INSTR_TIME_SUBTRACT(s2,s1);
     ereport(LOG,(errmsg("eigen discrete fourier transform spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));
 
     a3 = (ArrayType *) palloc0(l3);
     SET_VARSIZE(a3, l3);
-    a3->ndim = m3;
+    a3->ndim = n3;
     a3->dataoffset = 0;
     a3->elemtype = t1;
-    memcpy(ARR_DIMS(a3)  , d3, m3 * sizeof(int));
-    memcpy(ARR_LBOUND(a3), b3, m3 * sizeof(int));
+    memcpy(ARR_DIMS(a3)  , d3, n3 * sizeof(int));
+    memcpy(ARR_LBOUND(a3), b3, n3 * sizeof(int));
     if (t1 == FLOAT4OID)
-        memcpy(ARR_DATA_PTR(a3), v2, n3 * sizeof(float4));
+        memcpy(ARR_DATA_PTR(a3), v3, c3 * sizeof(float4));
     else if (t1 == FLOAT8OID)
-        memcpy(ARR_DATA_PTR(a3), v2, n3 * sizeof(float8));
-    pfree(v2);
+        memcpy(ARR_DATA_PTR(a3), v3, c3 * sizeof(float8));
+    pfree(v3);
     pfree(d3);
     pfree(b3);
     PG_RETURN_ARRAYTYPE_P(a3);

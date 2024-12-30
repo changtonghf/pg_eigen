@@ -416,14 +416,14 @@ extern "C" void pg_tensor_reduce(unsigned int oid,unsigned int fn,char* in,unsig
     }
 }
 
-template<typename T,int L,unsigned int M,unsigned int R,unsigned int D>
-void tensor_rfft(T* in,unsigned int* d1,T* out,unsigned int* d2)
+template<typename T,int L,int M,int R,int D>
+void tensor_rfft(T* in,int* d1,T* out,int* d2)
 {
-    Eigen::array<unsigned int, M> m;
-    for (unsigned int i=0;i < M;i++) m[i] = d1[i];
+    Eigen::array<int, M> m;
+    for (int i=0;i < M;i++) m[i] = d1[i];
     Eigen::TensorMap<Eigen::Tensor<T, M, L>> x(in, m);
-    Eigen::array<unsigned int, M> f;
-    for (unsigned int i=0;i < M;i++) f[i] = d2[i];
+    Eigen::array<int, M> f;
+    for (int i=0;i < M;i++) f[i] = d2[i];
     Eigen::Tensor<std::complex<T>, M, L> y = x.template fft<R, D>(f);
     for (Eigen::DenseIndex i=0;i < y.size();i++)
     {
@@ -432,14 +432,14 @@ void tensor_rfft(T* in,unsigned int* d1,T* out,unsigned int* d2)
     }
 }
 
-template<typename T,int L,unsigned int M,unsigned int R,unsigned int D>
-void tensor_fft(std::complex<T>* in,unsigned int* d1,T* out,unsigned int* d2)
+template<typename T,int L,int M,int R,int D>
+void tensor_fft(std::complex<T>* in,int* d1,T* out,int* d2)
 {
-    Eigen::array<unsigned int, M> m;
-    for (unsigned int i=0;i < M;i++) m[i] = d1[i];
+    Eigen::array<int, M> m;
+    for (int i=0;i < M;i++) m[i] = d1[i];
     Eigen::TensorMap<Eigen::Tensor<std::complex<T>, M, L>> x(in, m);
-    Eigen::array<unsigned int, M> f;
-    for (unsigned int i=0;i < M;i++) f[i] = d2[i];
+    Eigen::array<int, M> f;
+    for (int i=0;i < M;i++) f[i] = d2[i];
     Eigen::Tensor<std::complex<T>, M, L> y = x.template fft<R, D>(f);
     for (Eigen::DenseIndex i=0;i < y.size();i++)
     {
@@ -448,7 +448,7 @@ void tensor_fft(std::complex<T>* in,unsigned int* d1,T* out,unsigned int* d2)
     }
 }
 
-extern "C" void pg_tensor_fft(unsigned int oid,bool forward,char* in,unsigned int n1,unsigned int* d1,void* out,unsigned int n2,unsigned int* d2)
+extern "C" void pg_tensor_fft(int oid,bool forward,char* in,int n1,int* d1,void* out,int n2,int* d2)
 {
     if (forward)
     {
