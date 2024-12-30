@@ -614,47 +614,47 @@ extern "C" void pg_tensor_random(unsigned int fn,unsigned int num,double* out,do
     }
 }
 
-extern "C" void pg_tensor_shuffle(unsigned int oid,unsigned int step, unsigned int num,void* out)
+extern "C" void pg_tensor_shuffle(int oid,int s1, int c1,void* out)
 {
     std::default_random_engine r{std::random_device{}()};
     if (oid == 700)
     {
-        for (unsigned int i = 0;(i * step) < num;i++)
+        for (int i = 0;(i * s1) < c1;i++)
         {
-            std::shuffle((float*)out, (float*)out + step, r);
-            out = (float*)out + step;
+            std::shuffle((float*)out, (float*)out + s1, r);
+            out = (float*)out + s1;
         }
     }
     else if (oid == 701)
     {
-        for (unsigned int i = 0;(i * step) < num;i++)
+        for (int i = 0;(i * s1) < c1;i++)
         {
-            std::shuffle((double*)out, (double*)out + step, r);
-            out = (double*)out + step;
+            std::shuffle((double*)out, (double*)out + s1, r);
+            out = (double*)out + s1;
         }
     }
     else if (oid ==  21)
     {
-        for (unsigned int i = 0;(i * step) < num;i++)
+        for (int i = 0;(i * s1) < c1;i++)
         {
-            std::shuffle((short*)out, (short*)out + step, r);
-            out = (short*)out + step;
+            std::shuffle((short*)out, (short*)out + s1, r);
+            out = (short*)out + s1;
         }
     }
     else if (oid ==  23)
     {
-        for (unsigned int i = 0;(i * step) < num;i++)
+        for (int i = 0;(i * s1) < c1;i++)
         {
-            std::shuffle((int*)out, (int*)out + step, r);
-            out = (int*)out + step;
+            std::shuffle((int*)out, (int*)out + s1, r);
+            out = (int*)out + s1;
         }
     }
     else if (oid ==  20)
     {
-        for (unsigned int i = 0;(i * step) < num;i++)
+        for (int i = 0;(i * s1) < c1;i++)
         {
-            std::shuffle((long*)out, (long*)out + step, r);
-            out = (long*)out + step;
+            std::shuffle((long*)out, (long*)out + s1, r);
+            out = (long*)out + s1;
         }
     }
 }
