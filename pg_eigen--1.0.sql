@@ -50,3 +50,6 @@ CREATE FUNCTION array_argpos(text,   int4[], int4) RETURNS int8[] AS 'MODULE_PAT
 CREATE FUNCTION array_argpos(text,   int8[], int4) RETURNS int8[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
 CREATE FUNCTION array_argpos(text, float4[], int4) RETURNS int8[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
 CREATE FUNCTION array_argpos(text, float8[], int4) RETURNS int8[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
+
+CREATE FUNCTION array_loss(text, float4[], float4[], int4) RETURNS float8[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
+CREATE FUNCTION array_loss(text, float8[], float8[], int4) RETURNS float8[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;

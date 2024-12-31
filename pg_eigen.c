@@ -23,6 +23,7 @@ extern void pg_tensor_dropout(int oid,void* i1,int n1,int* d1,float r2,int* n2,i
 extern void pg_tensor_matmul(int oid,int m1,int n1,void* i1,int* d1,void* i2,int* d2,bool* b2,void* o3,int* d3);
 extern void pg_tensor_softmax(int oid,void* in,int n1,int* d1,int ax,void* out);
 extern void pg_tensor_argpos(int oid,int fn,char* in,int n1,int* d1,void* out,int ax);
+extern void pg_tensor_loss(int oid,int fn,void* i1,int n1,int* d1,void* i2,void* o3,int ax);
 
 PG_FUNCTION_INFO_V1(array_reduce);
 PG_FUNCTION_INFO_V1(array_fft);
@@ -36,6 +37,7 @@ PG_FUNCTION_INFO_V1(array_dropout);
 PG_FUNCTION_INFO_V1(array_matmul);
 PG_FUNCTION_INFO_V1(array_softmax);
 PG_FUNCTION_INFO_V1(array_argpos);
+PG_FUNCTION_INFO_V1(array_loss);
 
 Datum array_reduce(PG_FUNCTION_ARGS)
 {
@@ -1183,4 +1185,92 @@ Datum array_argpos(PG_FUNCTION_ARGS)
     pfree(d2);
     pfree(v2);
     PG_RETURN_ARRAYTYPE_P(a2);
+}
+
+Datum array_loss(PG_FUNCTION_ARGS)
+{
+    ArrayType *a1, *a2, *a3;
+    Oid        t1,  t2;
+    char      *fn, *p1, *p2;
+    int32      n1, *d1,  c1;
+    int32      n2, *d2,  c2, ax;
+    int32      n3, *d3, *b3, c3, l3, j = 0;
+    void      *v3;
+    instr_time s1,  s2;
+
+    if (PG_ARGISNULL(0))
+        elog(ERROR, "loss function name not specified.");
+    fn = text_to_cstring(PG_GETARG_TEXT_P(0));
+    if (strcasecmp(fn, "MAE") != 0 && strcasecmp(fn, "MSE") != 0 && strcasecmp(fn, "CCE") != 0 && strcasecmp(fn, "SCE") != 0)
+        elog(ERROR, "\"%s\" is currently not supported in tensor loss calculation.", fn);
+    if (PG_ARGISNULL(1)) PG_RETURN_NULL();
+    if (PG_ARGISNULL(2)) PG_RETURN_NULL();
+    a1 = PG_GETARG_ARRAYTYPE_P(1);
+    a2 = PG_GETARG_ARRAYTYPE_P(2);
+    t1 = ARR_ELEMTYPE(a1);
+    t2 = ARR_ELEMTYPE(a2);
+    if (t1 != FLOAT4OID && t1 != FLOAT8OID)
+        elog(ERROR, "array argument type must be float point type.");
+    if (t1 != t2)
+        elog(ERROR, "true and predict values type must be same currently.");
+    n1 = ARR_NDIM(a1);
+    d1 = ARR_DIMS(a1);
+    n2 = ARR_NDIM(a2);
+    d2 = ARR_DIMS(a2);
+    if (n1 != n2)
+        elog(ERROR, "the shapes of the true and predict values must be the same.");
+    c1 = ArrayGetNItems(n1, d1);
+    c2 = ArrayGetNItems(n2, d2);
+    if (c1 != c2)
+        elog(ERROR, "the shapes of the true and predict values must be the same.");
+    for (uint32 i=0;i < n1;i++)
+    {
+        if (d1[i] != d2[i])
+            elog(ERROR, "the shapes of the true and predict values must be the same.");
+    }
+    p1 = ARR_DATA_PTR(a1);
+    p2 = ARR_DATA_PTR(a2);
+    if (PG_ARGISNULL(3))
+        ax = n1-1;
+    else
+        ax = PG_GETARG_INT32(3);
+    if (ax < 0 || ax >= n1)
+        elog(ERROR, "the axis to reduce sum across should be within the dimensions of the input tensor.");
+    n3 = n1 == 1 ? 1 : n1 - 1;
+    c3 = c1 / d1[ax];
+    d3 = (int32 *) palloc(n3 * sizeof(int32));
+    b3 = (int32 *) palloc(n3 * sizeof(int32));
+    for (uint32 i=0;i < n1;i++)
+    {
+        if (ax == i) continue;
+        d3[j] = d1[i]; b3[j] = 1; j++;
+    }
+    v3 = palloc(c3 * sizeof(float8));
+    l3 = c3 * sizeof(float8) + ARR_OVERHEAD_NONULLS(n3);
+
+    INSTR_TIME_SET_CURRENT(s1);
+    if (strcasecmp(fn, "MAE") == 0)
+        pg_tensor_loss(t1, 1, (void*) p1, n1, d1, (void*) p2, (void*) v3, ax);
+    else if (strcasecmp(fn, "MSE") == 0)
+        pg_tensor_loss(t1, 2, (void*) p1, n1, d1, (void*) p2, (void*) v3, ax);
+    else if (strcasecmp(fn, "CCE") == 0)
+        pg_tensor_loss(t1, 3, (void*) p1, n1, d1, (void*) p2, (void*) v3, ax);
+    else if (strcasecmp(fn, "SCE") == 0)
+        pg_tensor_loss(t1, 4, (void*) p1, n1, d1, (void*) p2, (void*) v3, ax);
+    INSTR_TIME_SET_CURRENT(s2);
+    INSTR_TIME_SUBTRACT(s2,s1);
+    ereport(LOG,(errmsg("eigen tensor matrix multiplication spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));
+
+    a3 = (ArrayType *) palloc(l3);
+    SET_VARSIZE(a3, l3);
+    a3->ndim = n3;
+    a3->dataoffset = 0;
+    a3->elemtype = FLOAT8OID;
+    memcpy(ARR_DIMS(a3)  , d3, n3 * sizeof(int32));
+    memcpy(ARR_LBOUND(a3), b3, n3 * sizeof(int32));
+    memcpy(ARR_DATA_PTR(a3), v3, c3 * sizeof(float8));
+    pfree(b3);
+    pfree(d3);
+    pfree(v3);
+    PG_RETURN_ARRAYTYPE_P(a3);
 }

@@ -453,3 +453,24 @@ select array_argpos('argmin', array[[2,20,30,3,6],[3,11,16,1,8],[14,45,23,5,27]]
  {0,3,3}
 (1 row)
 ```
+### 13. array_loss
+```sql
+/*
+ * The 1st parameter represents loss function [{'MAE':'mean_absolute_error'},{'MSE':'mean_squared_error'},{'CCE':'categorical_cross_entropy'},{'SCE':'softmax_cross_entropy'}].
+ * The 2nd parameter represents predict input tensor to be processed.
+ * The 3rd parameter represents true input tensor to be processed.
+ * The 4th parameter represents dimension index reduce would be performed on.
+ */
+
+select array_loss('SCE', array[[0.6,0.4],[-1.1,0.4],[0.5,0.2],[0.9,1.6]]::float8[], array[[1,0],[0,1],[1,0],[0,1]]::float8[], 0);
+               array_loss
+----------------------------------------
+ {2.5694189609301676,2.429274099194261}
+(1 row)
+
+select array_loss('SCE', array[[0.6,0.4],[-1.1,0.4],[0.5,0.2],[0.9,1.6]]::float8[], array[[1,0],[0,1],[1,0],[0,1]]::float8[], 1);
+                                 array_loss
+----------------------------------------------------------------------------
+ {0.598138869381592,0.2014132779827524,0.554355244468527,0.403186048885458}
+(1 row)
+```

@@ -1209,3 +1209,210 @@ extern "C" void pg_tensor_argpos(int oid,int fn,char* in,int n1,int* d1,void* ou
             tensor_argpos<long, Eigen::RowMajor, 6>(fn, (long*) in, d1, ax, (long*) out);
     }
 }
+
+template<typename T,int L,int M>
+void tensor_mean_absolute_error(T* i1,int* d1,T* i2,int ax,double* o3)
+{
+    Eigen::array<int, M> m;
+    for (int i=0;i < M;i++) m[i] = d1[i];
+    Eigen::array<Eigen::ptrdiff_t, 1> r = {ax};
+    Eigen::TensorMap<Eigen::Tensor<T, M, L>> x(i1, m);
+    Eigen::Tensor<double, M, L> a = x.template cast<double>();
+    Eigen::TensorMap<Eigen::Tensor<T, M, L>> y(i2, m);
+    Eigen::Tensor<double, M, L> b = y.template cast<double>();
+    Eigen::Tensor<double, M-1, L> c = (b - a).abs().mean(r);
+    std::copy(c.data(), c.data() + c.size(), o3);
+}
+
+template<typename T,int L,int M>
+void tensor_mean_squared_error(T* i1,int* d1,T* i2,int ax,double* o3)
+{
+    Eigen::array<int, M> m;
+    for (int i=0;i < M;i++) m[i] = d1[i];
+    Eigen::array<Eigen::ptrdiff_t, 1> r = {ax};
+    Eigen::TensorMap<Eigen::Tensor<T, M, L>> x(i1, m);
+    Eigen::Tensor<double, M, L> a = x.template cast<double>();
+    Eigen::TensorMap<Eigen::Tensor<T, M, L>> y(i2, m);
+    Eigen::Tensor<double, M, L> b = y.template cast<double>();
+    Eigen::Tensor<double, M-1, L> c = (b - a).pow(2).mean(r);
+    std::copy(c.data(), c.data() + c.size(), o3);
+}
+
+template<typename T,int L,int M>
+void tensor_categorical_cross_entropy(T* i1,int* d1,T* i2,int ax,double* o3)
+{
+    Eigen::array<int, M> m;
+    for (int i=0;i < M;i++) m[i] = d1[i];
+    Eigen::array<Eigen::ptrdiff_t, 1> r = {ax};
+    Eigen::TensorMap<Eigen::Tensor<T, M, L>> x(i1, m);
+    Eigen::Tensor<double, M, L> a = x.template cast<double>().log();
+    Eigen::TensorMap<Eigen::Tensor<T, M, L>> y(i2, m);
+    Eigen::Tensor<double, M, L> b = y.template cast<double>();
+    Eigen::Tensor<double, M-1, L> c = - (a * b).sum(r);
+    std::copy(c.data(), c.data() + c.size(), o3);
+}
+
+template<typename T,int L,int M>
+void tensor_softmax_cross_entropy(T* i1,int* d1,T* i2,int ax,double* o3)
+{
+    Eigen::array<int, M> m;
+    for (int i=0;i < M;i++) m[i] = d1[i];
+    Eigen::TensorMap<Eigen::Tensor<T, M, L>> x(i1, m);
+    Eigen::Tensor<double, M, L> a = x.template cast<double>().exp();
+    Eigen::array<Eigen::ptrdiff_t, 1> r = {ax};
+    Eigen::array<Eigen::ptrdiff_t, M> s, t;
+    for (int i=0;i < M;i++)
+    {
+        if (i == ax)
+        { s[i] = 1; t[i] = d1[i]; }
+        else
+        { t[i] = 1; s[i] = d1[i]; }
+    }
+    Eigen::Tensor<double, M, L> d = a.sum(r).reshape(s).broadcast(t);
+    Eigen::TensorMap<Eigen::Tensor<T, M, L>> y(i2, m);
+    Eigen::Tensor<double, M, L> b = y.template cast<double>();
+    Eigen::Tensor<double, M-1, L> c = - (b * (a / d).log()).sum(r);
+    std::copy(c.data(), c.data() + c.size(), o3);
+}
+
+extern "C" void pg_tensor_loss(int oid,int fn,void* i1,int n1,int* d1,void* i2,void* o3,int ax)
+{
+    if (oid == 700)
+    {
+        if (n1 == 1)
+        {
+            if (fn == 1)
+                tensor_mean_absolute_error<float, Eigen::RowMajor, 1>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+            else if (fn == 2)
+                tensor_mean_squared_error<float, Eigen::RowMajor, 1>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+            else if (fn == 3)
+                tensor_categorical_cross_entropy<float, Eigen::RowMajor, 1>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+            else if (fn == 4)
+                tensor_softmax_cross_entropy<float, Eigen::RowMajor, 1>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+        }
+        else if (n1 == 2)
+        {
+            if (fn == 1)
+                tensor_mean_absolute_error<float, Eigen::RowMajor, 2>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+            else if (fn == 2)
+                tensor_mean_squared_error<float, Eigen::RowMajor, 2>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+            else if (fn == 3)
+                tensor_categorical_cross_entropy<float, Eigen::RowMajor, 2>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+            else if (fn == 4)
+                tensor_softmax_cross_entropy<float, Eigen::RowMajor, 2>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+        }
+        else if (n1 == 3)
+        {
+            if (fn == 1)
+                tensor_mean_absolute_error<float, Eigen::RowMajor, 3>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+            else if (fn == 2)
+                tensor_mean_squared_error<float, Eigen::RowMajor, 3>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+            else if (fn == 3)
+                tensor_categorical_cross_entropy<float, Eigen::RowMajor, 3>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+            else if (fn == 4)
+                tensor_softmax_cross_entropy<float, Eigen::RowMajor, 3>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+        }
+        else if (n1 == 4)
+        {
+            if (fn == 1)
+                tensor_mean_absolute_error<float, Eigen::RowMajor, 4>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+            else if (fn == 2)
+                tensor_mean_squared_error<float, Eigen::RowMajor, 4>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+            else if (fn == 3)
+                tensor_categorical_cross_entropy<float, Eigen::RowMajor, 4>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+            else if (fn == 4)
+                tensor_softmax_cross_entropy<float, Eigen::RowMajor, 4>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+        }
+        else if (n1 == 5)
+        {
+            if (fn == 1)
+                tensor_mean_absolute_error<float, Eigen::RowMajor, 5>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+            else if (fn == 2)
+                tensor_mean_squared_error<float, Eigen::RowMajor, 5>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+            else if (fn == 3)
+                tensor_categorical_cross_entropy<float, Eigen::RowMajor, 5>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+            else if (fn == 4)
+                tensor_softmax_cross_entropy<float, Eigen::RowMajor, 5>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+        }
+        else if (n1 == 6)
+        {
+            if (fn == 1)
+                tensor_mean_absolute_error<float, Eigen::RowMajor, 6>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+            else if (fn == 2)
+                tensor_mean_squared_error<float, Eigen::RowMajor, 6>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+            else if (fn == 3)
+                tensor_categorical_cross_entropy<float, Eigen::RowMajor, 6>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+            else if (fn == 4)
+                tensor_softmax_cross_entropy<float, Eigen::RowMajor, 6>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+        }
+    }
+    else if (oid == 701)
+    {
+        if (n1 == 1)
+        {
+            if (fn == 1)
+                tensor_mean_absolute_error<double, Eigen::RowMajor, 1>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+            else if (fn == 2)
+                tensor_mean_squared_error<double, Eigen::RowMajor, 1>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+            else if (fn == 3)
+                tensor_categorical_cross_entropy<double, Eigen::RowMajor, 1>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+            else if (fn == 4)
+                tensor_softmax_cross_entropy<double, Eigen::RowMajor, 1>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+        }
+        else if (n1 == 2)
+        {
+            if (fn == 1)
+                tensor_mean_absolute_error<double, Eigen::RowMajor, 2>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+            else if (fn == 2)
+                tensor_mean_squared_error<double, Eigen::RowMajor, 2>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+            else if (fn == 3)
+                tensor_categorical_cross_entropy<double, Eigen::RowMajor, 2>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+            else if (fn == 4)
+                tensor_softmax_cross_entropy<double, Eigen::RowMajor, 2>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+        }
+        else if (n1 == 3)
+        {
+            if (fn == 1)
+                tensor_mean_absolute_error<double, Eigen::RowMajor, 3>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+            else if (fn == 2)
+                tensor_mean_squared_error<double, Eigen::RowMajor, 3>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+            else if (fn == 3)
+                tensor_categorical_cross_entropy<double, Eigen::RowMajor, 3>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+            else if (fn == 4)
+                tensor_softmax_cross_entropy<double, Eigen::RowMajor, 3>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+        }
+        else if (n1 == 4)
+        {
+            if (fn == 1)
+                tensor_mean_absolute_error<double, Eigen::RowMajor, 4>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+            else if (fn == 2)
+                tensor_mean_squared_error<double, Eigen::RowMajor, 4>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+            else if (fn == 3)
+                tensor_categorical_cross_entropy<double, Eigen::RowMajor, 4>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+            else if (fn == 4)
+                tensor_softmax_cross_entropy<double, Eigen::RowMajor, 4>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+        }
+        else if (n1 == 5)
+        {
+            if (fn == 1)
+                tensor_mean_absolute_error<double, Eigen::RowMajor, 5>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+            else if (fn == 2)
+                tensor_mean_squared_error<double, Eigen::RowMajor, 5>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+            else if (fn == 3)
+                tensor_categorical_cross_entropy<double, Eigen::RowMajor, 5>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+            else if (fn == 4)
+                tensor_softmax_cross_entropy<double, Eigen::RowMajor, 5>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+        }
+        else if (n1 == 6)
+        {
+            if (fn == 1)
+                tensor_mean_absolute_error<double, Eigen::RowMajor, 6>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+            else if (fn == 2)
+                tensor_mean_squared_error<double, Eigen::RowMajor, 6>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+            else if (fn == 3)
+                tensor_categorical_cross_entropy<double, Eigen::RowMajor, 6>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+            else if (fn == 4)
+                tensor_softmax_cross_entropy<double, Eigen::RowMajor, 6>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+        }
+    }
+}
