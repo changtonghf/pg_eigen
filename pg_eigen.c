@@ -38,6 +38,7 @@ PG_FUNCTION_INFO_V1(array_matmul);
 PG_FUNCTION_INFO_V1(array_softmax);
 PG_FUNCTION_INFO_V1(array_argpos);
 PG_FUNCTION_INFO_V1(array_loss);
+PG_FUNCTION_INFO_V1(array_reshape);
 
 Datum array_reduce(PG_FUNCTION_ARGS)
 {
@@ -1272,5 +1273,51 @@ Datum array_loss(PG_FUNCTION_ARGS)
     pfree(b3);
     pfree(d3);
     pfree(v3);
+    PG_RETURN_ARRAYTYPE_P(a3);
+}
+
+Datum array_reshape(PG_FUNCTION_ARGS)
+{
+    ArrayType *a1, *a2, *a3;
+    Oid        t1;
+    char      *p1;
+    int        n1, *d1,  c1;
+    int        n2, *d2, *p2, c2, s2 = 1;
+    int       *d3, *b3,  l3;
+
+    if (PG_ARGISNULL(0)) PG_RETURN_NULL();
+    a1 = PG_GETARG_ARRAYTYPE_P(0);
+    t1 = ARR_ELEMTYPE(a1);
+    n1 = ARR_NDIM(a1);
+    d1 = ARR_DIMS(a1);
+    c1 = ArrayGetNItems(n1, d1);
+    p1 = ARR_DATA_PTR(a1);
+    if (PG_ARGISNULL(1)) PG_RETURN_ARRAYTYPE_P(a1);
+    a2 = PG_GETARG_ARRAYTYPE_P(1);
+    n2 = ARR_NDIM(a2);
+    if (n2 != 1) elog(ERROR, "shape array must be 1 dimension.");
+    d2 = ARR_DIMS(a2);
+    c2 = ArrayGetNItems(n2, d2);
+    p2 = (int*)ARR_DATA_PTR(a2);
+    for (uint32 i=0;i < c2;i++) s2 *= p2[i];
+    if (s2 != c1) elog(ERROR, "redefine shape incompatible with original array.");
+    d3 = (int *) palloc(c2 * sizeof(int));
+    b3 = (int *) palloc(c2 * sizeof(int));
+    for (uint32 i=0;i < c2;i++)
+    {
+        d3[i] = p2[i];
+        b3[i] = 1;
+    }
+    l3 = ARR_SIZE(a1) - ARR_OVERHEAD_NONULLS(n1) + ARR_OVERHEAD_NONULLS(c2);
+    a3 = (ArrayType *) palloc(l3);
+    SET_VARSIZE(a3, l3);
+    a3->ndim = c2;
+    a3->dataoffset = 0;
+    a3->elemtype = t1;
+    memcpy(ARR_DIMS(a3)  , d3, c2 * sizeof(int));
+    memcpy(ARR_LBOUND(a3), b3, c2 * sizeof(int));
+    memcpy(ARR_DATA_PTR(a3), p1, ARR_SIZE(a1) - ARR_OVERHEAD_NONULLS(n1));
+    pfree(b3);
+    pfree(d3);
     PG_RETURN_ARRAYTYPE_P(a3);
 }
