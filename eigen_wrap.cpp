@@ -664,16 +664,46 @@ extern "C" void pg_tensor_shuffle(int oid,int s1, int c1,void* out)
 template<typename T,int L>
 void tensor_binaryop(int fn,int m,T* a,T* b)
 {
+    Eigen::Tensor<T, 1, L> n;
     Eigen::TensorMap<Eigen::Tensor<T, 1, L>> x(a, m);
     Eigen::TensorMap<Eigen::Tensor<T, 1, L>> y(b, m);
-    if (fn == 1)
-        x = x + y;
-    else if (fn == 2)
-        x = x - y;
-    else if (fn == 3)
-        x = x * y;
-    else if (fn == 4)
-        x = x / y;
+    switch (fn)
+    {
+    case 1:
+        x += y;
+        break;
+    case 2:
+        x -= y;
+        break;
+    case 3:
+        x *= y;
+        break;
+    case 4:
+        x /= y;
+        break;
+    case 5:
+        n = (x == y).template cast<T>();
+        break;
+    case 6:
+        n = (x != y).template cast<T>();
+        break;
+    case 7:
+        n = (x  < y).template cast<T>();
+        break;
+    case 8:
+        n = (x <= y).template cast<T>();
+        break;
+    case 9:
+        n = (x  > y).template cast<T>();
+        break;
+    case 10:
+        n = (x >= y).template cast<T>();
+        break;
+    default:
+        break;
+    }
+    if (n.dimension(0) == m)
+        std::copy(n.data(), n.data() + n.size(), a);
 }
 
 extern "C" void pg_tensor_binaryop(int oid,int fn,int c1,void* a1,void* a2)

@@ -420,8 +420,6 @@ Datum array_binaryop(PG_FUNCTION_ARGS)
     if (PG_ARGISNULL(0))
         elog(ERROR, "calculate function name not specified.");
     fn = text_to_cstring(PG_GETARG_TEXT_P(0));
-    if (strcasecmp(fn, "add") != 0 && strcasecmp(fn, "sub") != 0 && strcasecmp(fn, "mul") != 0 && strcasecmp(fn, "div") != 0)
-        elog(ERROR, "\"%s\" is currently not supported in tensor broadcasting calculation.", fn);
     if (PG_ARGISNULL(1)) PG_RETURN_NULL();
     if (PG_ARGISNULL(2)) PG_RETURN_NULL();
     a1 = PG_GETARG_ARRAYTYPE_P(1);
@@ -455,6 +453,20 @@ Datum array_binaryop(PG_FUNCTION_ARGS)
         pg_tensor_binaryop(t1, 3, c1, (void*) p1, (void*) p2);
     else if (strcasecmp(fn, "div") == 0)
         pg_tensor_binaryop(t1, 4, c1, (void*) p1, (void*) p2);
+    else if (strcasecmp(fn, "eq") == 0)
+        pg_tensor_binaryop(t1, 5, c1, (void*) p1, (void*) p2);
+    else if (strcasecmp(fn, "ne") == 0)
+        pg_tensor_binaryop(t1, 6, c1, (void*) p1, (void*) p2);
+    else if (strcasecmp(fn, "lt") == 0)
+        pg_tensor_binaryop(t1, 7, c1, (void*) p1, (void*) p2);
+    else if (strcasecmp(fn, "le") == 0)
+        pg_tensor_binaryop(t1, 8, c1, (void*) p1, (void*) p2);
+    else if (strcasecmp(fn, "gt") == 0)
+        pg_tensor_binaryop(t1, 9, c1, (void*) p1, (void*) p2);
+    else if (strcasecmp(fn, "ge") == 0)
+        pg_tensor_binaryop(t1,10, c1, (void*) p1, (void*) p2);
+    else
+        elog(ERROR, "\"%s\" is currently not supported in tensor broadcasting calculation.", fn);
 
     PG_RETURN_ARRAYTYPE_P(a1);
 }
