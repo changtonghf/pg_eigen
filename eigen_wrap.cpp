@@ -1446,3 +1446,90 @@ extern "C" void pg_tensor_loss(int oid,int fn,void* i1,int n1,int* d1,void* i2,v
         }
     }
 }
+
+template<typename T,int L,int M>
+void tensor_unpool(int fn,T* i1,int* d1,int* k2,int* s3,int* p4,T* g5,int* d5,T* o6)
+{
+    Eigen::array<int, M> m;
+    for (int i=0;i < M;i++) m[i] = d1[i];
+    Eigen::TensorMap<Eigen::Tensor<T, M, L>> in(i1, m);
+    Eigen::array<int, M> n;
+    for (int i=0;i < M;i++) n[i] = d5[i];
+    Eigen::TensorMap<Eigen::Tensor<T, M, L>> gi(g5, n);
+    Eigen::array<std::pair<ptrdiff_t, ptrdiff_t>, M> pd;
+    if (p4 == NULL)
+        for (int i=0;i < M;i++) pd[i] = std::make_pair((ptrdiff_t)0,(ptrdiff_t)0);
+    else
+        for (int i=0;i < M;i++) pd[i] = std::make_pair((ptrdiff_t)p4[2*i],(ptrdiff_t)p4[2*i+1]);
+    Eigen::array<ptrdiff_t, M> bs;
+    for (int i=0;i < M;i++) bs[i] = s3[i];
+    Eigen::Tensor<T, M, L> gb = gi.broadcast(bs);
+    Eigen::array<Eigen::ptrdiff_t, 2*M-2> md;
+    md[0] = gb.dimension(0); md[2*M-3] = gb.dimension(M-1);
+    for (int i=1;i < 2*M-3;i=i+2) {md[i] = s3[(i+1)/2]; md[i+1] = d5[(i+2)/2];}
+    Eigen::Tensor<T, 2*M-2, L> gr = gb.reshape(md);
+    Eigen::DSizes<Eigen::DenseIndex, 2*M-2> sx;
+    sx[0] = 0;sx[2*M-3] = 2*M-3;
+    for (int i=1;i < 2*M-3;i=i+2) {sx[i] = i+1; sx[i+1] = i;}
+    Eigen::Tensor<T, 2*M-2, L> gf = gr.shuffle(sx);
+    Eigen::array<Eigen::ptrdiff_t, M> sd;
+    for (int i=0;i < M;i++) sd[i] = d5[i] * s3[i];
+    Eigen::Tensor<T, M, L> gt = gf.reshape(sd);
+    if (fn == 1)
+    {
+        Eigen::array<int, M> kr;
+        kr[0] = d1[0];kr[M-1] = d1[M-1];
+        for (int i=1;i < M-1;i++) kr[i] = k2[i];
+        Eigen::array<ptrdiff_t, M-2> rd;
+        for (int i=2;i < M;i++) rd[i-2] = i;
+        Eigen::Tensor<T, M, L> p0 = in.pad(pd);
+        Eigen::Tensor<T, M+1, L> ep = p0.extract_patches(kr);
+        Eigen::Tensor<Eigen::Tuple<Eigen::DenseIndex, T>, M+1, L> et = ep.index_tuples();
+        Eigen::Tensor<Eigen::Tuple<Eigen::DenseIndex, T>, 3, L> em = et.reduce(rd, Eigen::internal::ArgMaxTupleReducer<Eigen::Tuple<Eigen::DenseIndex, T>>());
+        Eigen::Tensor<T, M+1, L> vp = ep.constant(0);
+        for (int i = 0; i < em.size(); ++i) vp(em(i).first) = 1;
+        Eigen::array<Eigen::ptrdiff_t, 2*M-2> ds;
+        for (int i=0;i < M-2;i++) ds[i] = in.dimension(i+1);
+        for (int i=M-2;i < 2*M-2;i++) ds[i] = kr[i-(M-2)];
+        Eigen::Tensor<T, 2*M-2, L> rp = vp.reshape(ds);
+        Eigen::DSizes<Eigen::DenseIndex, 2*M-2> st;
+        for (int i=0;i < 2*M-2;i++) st[i] = 0;
+        Eigen::DSizes<Eigen::DenseIndex, 2*M-2> ed;
+        for (int i=0;i < 2*M-2;i++) ed[i] = rp.dimension(i);
+        Eigen::DSizes<Eigen::DenseIndex, 2*M-2> iv;
+        for (int i=0;i < M-2;i++) iv[i] = s3[i+1];
+        for (int i=M-2;i < 2*M-2;i++) iv[i] = 1;
+        Eigen::Tensor<T, 2*M-2, L> sp = rp.stridedSlice(st,ed,iv);
+        Eigen::DSizes<Eigen::DenseIndex, 2*M-2> si;
+        si[0] = M-2; si[2*M-3] = 2*M-3;
+        for (int i=1;i < 2*M-3;i=i+2) {si[i] = i/2; si[i+1] = (M-1) + (i/2);}
+        Eigen::Tensor<T, 2*M-2, L> fp = sp.shuffle(si);
+        gt *= fp.reshape(sd);
+    }
+    Eigen::array<ptrdiff_t, M> s;
+    for (int i=0;i < M;i++) s[i] = pd[i].first;
+    Eigen::Tensor<T, M, L> ft = gt.slice(s, m);
+    std::copy(ft.data(), ft.data() + ft.size(), o6);
+}
+
+extern "C" void pg_tensor_unpool(int oid,int fn,void* i1,int n1,int* d1,int* k2,int* s3,int* p4,void* g5,int* d5,void* o6)
+{
+    if (oid == 700)
+    {
+        if (n1 == 3)
+            tensor_unpool<float, Eigen::RowMajor, 3>(fn, (float*) i1, d1, k2, s3, p4, (float*) g5, d5, (float*) o6);
+        else if (n1 == 4)
+            tensor_unpool<float, Eigen::RowMajor, 4>(fn, (float*) i1, d1, k2, s3, p4, (float*) g5, d5, (float*) o6);
+        else if (n1 == 5)
+            tensor_unpool<float, Eigen::RowMajor, 5>(fn, (float*) i1, d1, k2, s3, p4, (float*) g5, d5, (float*) o6);
+    }
+    else if (oid == 701)
+    {
+        if (n1 == 3)
+            tensor_unpool<double, Eigen::RowMajor, 3>(fn, (double*) i1, d1, k2, s3, p4, (double*) g5, d5, (double*) o6);
+        else if (n1 == 4)
+            tensor_unpool<double, Eigen::RowMajor, 4>(fn, (double*) i1, d1, k2, s3, p4, (double*) g5, d5, (double*) o6);
+        else if (n1 == 5)
+            tensor_unpool<double, Eigen::RowMajor, 5>(fn, (double*) i1, d1, k2, s3, p4, (double*) g5, d5, (double*) o6);
+    }
+}

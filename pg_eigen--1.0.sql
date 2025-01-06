@@ -59,3 +59,6 @@ CREATE FUNCTION array_reshape(  int4[], int4[]) RETURNS   int4[] AS 'MODULE_PATH
 CREATE FUNCTION array_reshape(  int8[], int4[]) RETURNS   int8[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
 CREATE FUNCTION array_reshape(float4[], int4[]) RETURNS float4[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
 CREATE FUNCTION array_reshape(float8[], int4[]) RETURNS float8[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
+
+CREATE FUNCTION array_unpool(text, text, float4[], int4[], int4[], text, float4[]) RETURNS float4[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
+CREATE FUNCTION array_unpool(text, text, float8[], int4[], int4[], text, float8[]) RETURNS float8[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
