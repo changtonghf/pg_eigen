@@ -1506,6 +1506,12 @@ void tensor_unpool(int fn,T* i1,int* d1,int* k2,int* s3,int* p4,T* g5,int* d5,T*
         Eigen::Tensor<T, 2*M-2, L> fp = sp.shuffle(si);
         gt *= fp.reshape(sd);
     }
+    else if (fn == 2)
+    {
+        Eigen::TensorMap<Eigen::Tensor<int, 1, L>> ke(k2, M);
+        Eigen::Tensor<T, 0, L> kp = ke.prod().template cast<T>();
+        gt /= gt.constant(kp());
+    }
     Eigen::array<ptrdiff_t, M> s;
     for (int i=0;i < M;i++) s[i] = pd[i].first;
     Eigen::Tensor<T, M, L> ft = gt.slice(s, m);
