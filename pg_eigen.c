@@ -1,5 +1,6 @@
 #include "postgres.h"
 #include "fmgr.h"
+#include "funcapi.h"
 #include "utils/elog.h"
 #include "utils/builtins.h"
 #include "utils/array.h"
@@ -25,6 +26,7 @@ extern void pg_tensor_softmax(int oid,void* in,int n1,int* d1,int ax,void* out);
 extern void pg_tensor_argpos(int oid,int fn,char* in,int n1,int* d1,void* out,int ax);
 extern void pg_tensor_loss(int oid,int fn,void* i1,int n1,int* d1,void* i2,void* o3,int ax);
 extern void pg_tensor_unpool(int oid,int fn,void* i1,int n1,int* d1,int* k2,int* s3,int* p4,void* g5,int* d5,void* o6);
+extern void pg_tensor_convt(int oid,void* i1,int n1,int* d1,void* k2,int* d2,int* s3,int* p4,void* g5,int* d5,void* o6,void* o7,void* o8);
 
 PG_FUNCTION_INFO_V1(array_reduce);
 PG_FUNCTION_INFO_V1(array_fft);
@@ -41,6 +43,7 @@ PG_FUNCTION_INFO_V1(array_argpos);
 PG_FUNCTION_INFO_V1(array_loss);
 PG_FUNCTION_INFO_V1(array_reshape);
 PG_FUNCTION_INFO_V1(array_unpool);
+PG_FUNCTION_INFO_V1(array_convt);
 
 Datum array_reduce(PG_FUNCTION_ARGS)
 {
@@ -1126,7 +1129,7 @@ Datum array_softmax(PG_FUNCTION_ARGS)
     pg_tensor_softmax(t1, (void*) p1, n1, d1, ax, v2);
     INSTR_TIME_SET_CURRENT(s2);
     INSTR_TIME_SUBTRACT(s2,s1);
-    ereport(LOG,(errmsg("eigen tensor matrix multiplication spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));
+    ereport(LOG,(errmsg("eigen tensor softmax spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));
     a2 = (ArrayType *) palloc0(l2);
     SET_VARSIZE(a2, l2);
     a2->ndim = n1;
@@ -1187,7 +1190,7 @@ Datum array_argpos(PG_FUNCTION_ARGS)
         pg_tensor_argpos(t1, 2, p1, n1, d1, v2, ax);
     INSTR_TIME_SET_CURRENT(s2);
     INSTR_TIME_SUBTRACT(s2,s1);
-    ereport(LOG,(errmsg("eigen tensor matrix multiplication spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));
+    ereport(LOG,(errmsg("eigen tensor argmax/argmin spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));
     a2 = (ArrayType *) palloc(l2);
     SET_VARSIZE(a2, l2);
     a2->ndim = n2;
@@ -1274,7 +1277,7 @@ Datum array_loss(PG_FUNCTION_ARGS)
         pg_tensor_loss(t1, 4, (void*) p1, n1, d1, (void*) p2, (void*) v3, ax);
     INSTR_TIME_SET_CURRENT(s2);
     INSTR_TIME_SUBTRACT(s2,s1);
-    ereport(LOG,(errmsg("eigen tensor matrix multiplication spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));
+    ereport(LOG,(errmsg("eigen tensor Loss evaluation spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));
 
     a3 = (ArrayType *) palloc(l3);
     SET_VARSIZE(a3, l3);
@@ -1499,8 +1502,201 @@ Datum array_unpool(PG_FUNCTION_ARGS)
         pg_tensor_unpool(t1, 2, (void*) p1, n1, d1, p2, p3, p4, (void*) p_, d_, (void*) ARR_DATA_PTR(a6));
     INSTR_TIME_SET_CURRENT(s2);
     INSTR_TIME_SUBTRACT(s2,s1);
-    ereport(LOG,(errmsg("eigen pooling spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));
+    ereport(LOG,(errmsg("eigen inverse pooling spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));
 
     if (p4 != NULL) pfree(p4);
     PG_RETURN_ARRAYTYPE_P(a6);
+}
+
+Datum array_convt(PG_FUNCTION_ARGS)
+{
+    ArrayType *a1, *a2, *a3, *a_, *a6, *a7, *a8;
+    char      *df, *pd, *p1, *p2, *p_;
+    Oid        t1,  t2;
+    int        n1, *d1, n2, *d2, n3, *d3, c3, *p3, c4, *p4;
+    int        n5, *d_, n_,  c_, c5 = 1 , s[6] = {0,0,0,0,0,0};
+    instr_time s1,  s2;
+    TupleDesc  td;
+    HeapTuple  ht;
+    Datum      dt[3];
+    bool       nu[3];
+
+    if (PG_ARGISNULL(0))
+        elog(ERROR, "data format not specified.");
+    df = text_to_cstring(PG_GETARG_TEXT_P(0));
+    if (strcasecmp(df, "NWC") != 0 && strcasecmp(df, "NHWC") != 0 && strcasecmp(df, "NDHWC") != 0)
+        elog(ERROR, "\"%s\" is not supported in tensor transposed convolution input.", df);
+    if (PG_ARGISNULL(1)) PG_RETURN_NULL();
+    if (PG_ARGISNULL(2))
+        elog(ERROR, "convolution kernel not specified.");
+    a1 = PG_GETARG_ARRAYTYPE_P(1);
+    a2 = PG_GETARG_ARRAYTYPE_P(2);
+    if (PG_ARGISNULL(3))
+    {
+        a3 = NULL;
+        n3 = 0;
+        d3 = NULL;
+        p3 = NULL;
+    }
+    else
+    {
+        a3 = PG_GETARG_ARRAYTYPE_P(3);
+        n3 = ARR_NDIM(a3);
+        if (n3 != 1) elog(ERROR, "strides shape must be one dimension.");
+        d3 = ARR_DIMS(a3);
+        c3 = ArrayGetNItems(n3, d3);
+        p3 = (int*)ARR_DATA_PTR(a3);
+    }
+    if (PG_ARGISNULL(4))
+        elog(ERROR, "padding type not specified.");
+    else
+    {
+        pd = text_to_cstring(PG_GETARG_TEXT_P(4));
+        if (strcasecmp(pd, "SAME") != 0 && strcasecmp(pd, "VALID") != 0)
+            elog(ERROR, "\"%s\" is not supported in tensor convolution padding.", pd);
+    }
+    t1 = ARR_ELEMTYPE(a1);
+    if (t1 != FLOAT4OID && t1 != FLOAT8OID)
+        elog(ERROR, "input argument type must be float array type.");
+    t2 = ARR_ELEMTYPE(a2);
+    if (t2 != FLOAT4OID && t2 != FLOAT8OID)
+        elog(ERROR, "kernel argument type must be float array type.");
+    n1 = ARR_NDIM(a1);
+    d1 = ARR_DIMS(a1);
+    n2 = ARR_NDIM(a2);
+    d2 = ARR_DIMS(a2);
+    p1 = ARR_DATA_PTR(a1);
+    p2 = ARR_DATA_PTR(a2);
+    s[0] = d1[0];
+    if (strcasecmp(df, "NWC") == 0)
+    {
+        s[2] = d2[2];
+        n5 = 3;
+    }
+    else if (strcasecmp(df, "NHWC") == 0)
+    {
+        s[3] = d2[3];
+        n5 = 4;
+    }
+    else if (strcasecmp(df, "NDHWC") == 0)
+    {
+        s[4] = d2[4];
+        n5 = 5;
+    }
+    if (n1 != n5 || n2 != n5)
+        elog(ERROR, "input or kernel shape does not meet conv%dd operation.", n5-2);
+    for (uint32 i=0;i < n5-1;i++)
+        if (d2[i] > d1[i+1]) elog(ERROR, "input or kernel shape does not meet conv%dd operation.", n5-2);
+    if (a3 != NULL)
+    {
+        if (c3 != n5 || p3[0] != 1 || p3[c3-1] != 1)
+            elog(ERROR, "strides shape does not meet conv%dd operation.", n5-2);
+        for (uint32 i=1;i < n1-1;i++)
+        {
+            if (p3[i] <= 0 || p3[i] > d1[i])
+                elog(ERROR, "strides shape does not meet conv%dd operation.", n1-2);
+        }
+    }
+    if (strcasecmp(pd, "SAME") == 0)
+    {
+        if (n3 == 0)
+        {
+            for (uint32 i=1;i < n5-1;i++) s[i] = d1[i];
+        }
+        else
+        {
+            for (uint32 i=1;i < n5-1;i++)
+            {
+                if (d1[i] % p3[i] == 0)
+                    s[i] = d1[i] / p3[i];
+                else
+                    s[i] = d1[i] / p3[i] + 1;
+            }
+        }
+        c4 = n5 * 2;
+        p4 = (int *) palloc0(c4 * sizeof(int));
+        for (uint32 i=1;i < n5-1;i++)
+        {
+            if (d2[i-1] >= p3[i])
+            {
+                p4[2*i] = (d2[i-1] - 1) / 2;
+                p4[2*i+1] = ((d2[i-1] - 1) / 2) + ((d2[i-1] - 1) % 2);
+            }
+            else
+            {
+                int32 _p_ = s[i] * p3[i] - d1[i];
+                p4[2*i] = _p_ / 2;
+                p4[2*i+1] = (_p_ / 2) + (_p_ % 2);
+            }
+        }
+    }
+    else
+    {
+        if (n3 == 0)
+        {
+            for (uint32 i=1;i < n5-1;i++) s[i] = d1[i] - d2[i-1] + 1;
+        }
+        else
+        {
+            for (uint32 i=1;i < n5-1;i++)
+            {
+                if ((d1[i] - d2[i-1] + 1) % p3[i] == 0)
+                    s[i] = (d1[i] - d2[i-1] + 1) / p3[i];
+                else
+                    s[i] = (d1[i] - d2[i-1] + 1) / p3[i] + 1;
+            }
+        }
+        c4 = 0;
+        p4 = NULL;
+    }
+    for (uint32 i=0;i < n5;i++) c5 *= s[i];
+    a_ = PG_GETARG_ARRAYTYPE_P(5);
+    n_ = ARR_NDIM(a_);
+    d_ = ARR_DIMS(a_);
+    c_ = ArrayGetNItems(n_, d_);
+    p_ = ARR_DATA_PTR(a_);
+    if (n_ != n5 || c_ != c5)
+        elog(ERROR, "loss gradient shape does not meet transposed conv%dd operation.", n1-2);
+    for (uint32 i=0;i < n5;i++)
+    {
+        if (d_[i] != s[i])
+            elog(ERROR, "loss gradient shape does not meet transposed conv%dd operation.", n1-2);
+    }
+
+    a6 = (ArrayType *) palloc0(ARR_SIZE(a2));
+    SET_VARSIZE(a6, ARR_SIZE(a2));
+    a6->ndim = n2;
+    a6->dataoffset = 0;
+    a6->elemtype = t2;
+    memcpy(ARR_DIMS(a6) , ARR_DIMS(a2), n2 * sizeof(int));
+    memcpy(ARR_LBOUND(a6), ARR_LBOUND(a2), n2 * sizeof(int));
+    a7 = (ArrayType *) palloc0(ARR_SIZE(a1));
+    SET_VARSIZE(a7, ARR_SIZE(a1));
+    a7->ndim = n1;
+    a7->dataoffset = 0;
+    a7->elemtype = t1;
+    memcpy(ARR_DIMS(a7) , ARR_DIMS(a1), n1 * sizeof(int));
+    memcpy(ARR_LBOUND(a7), ARR_LBOUND(a1), n1 * sizeof(int));
+    a8 = (ArrayType *) palloc0(ARR_SIZE(a_));
+    SET_VARSIZE(a8, ARR_SIZE(a_));
+    a8->ndim = n_;
+    a8->dataoffset = 0;
+    a8->elemtype = t1;
+    memcpy(ARR_DIMS(a8) , ARR_DIMS(a_), n_ * sizeof(int));
+    memcpy(ARR_LBOUND(a8), ARR_LBOUND(a_), n_ * sizeof(int));
+
+    INSTR_TIME_SET_CURRENT(s1);
+    pg_tensor_convt(t1, (void*) p1, n1, d1, (void*) p2, d2, p3, p4, (void*) p_, d_, (void*) ARR_DATA_PTR(a6), (void*) ARR_DATA_PTR(a7), (void*) ARR_DATA_PTR(a8));
+    INSTR_TIME_SET_CURRENT(s2);
+    INSTR_TIME_SUBTRACT(s2,s1);
+    ereport(LOG,(errmsg("eigen transposed convolution spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));
+
+    if (get_call_result_type(fcinfo, NULL, &td) != TYPEFUNC_COMPOSITE)
+        elog(ERROR, "transposed convolution gradients (∂L/∂W,∂L/∂X,∂L/∂b) must be a row type.");
+    memset(nu, 0, sizeof(nu));
+    dt[0] = PointerGetDatum(a6);
+    dt[1] = PointerGetDatum(a7);
+    dt[2] = PointerGetDatum(a8);
+    ht = heap_form_tuple(td, dt, nu);
+    return HeapTupleGetDatum(ht);
 }

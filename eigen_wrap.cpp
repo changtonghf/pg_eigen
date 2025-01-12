@@ -1539,3 +1539,103 @@ extern "C" void pg_tensor_unpool(int oid,int fn,void* i1,int n1,int* d1,int* k2,
             tensor_unpool<double, Eigen::RowMajor, 5>(fn, (double*) i1, d1, k2, s3, p4, (double*) g5, d5, (double*) o6);
     }
 }
+
+template<typename T,int L,int M>
+void tensor_convt(T* i1,int* d1,T* k2,int* d2,int* s3,int* p4,T* g5,int* d5,T* o6,T* o7,T* o8)
+{
+    Eigen::array<int, M> m;
+    for (int i=0;i < M;i++) m[i] = d1[i];
+    Eigen::TensorMap<Eigen::Tensor<T, M, L>> in(i1, m);
+    Eigen::array<int, M> n;
+    for (int i=0;i < M;i++) n[i] = d2[i];
+    Eigen::TensorMap<Eigen::Tensor<T, M, L>> kr(k2, n);
+    Eigen::array<int, M> q;
+    for (int i=0;i < M;i++) q[i] = d5[i];
+    Eigen::TensorMap<Eigen::Tensor<T, M, L>> gi(g5, q);
+    Eigen::array<std::pair<ptrdiff_t, ptrdiff_t>, M> pd, bd, xd;
+    if (p4 == NULL)
+        for (int i=0;i < M;i++) pd[i] = std::make_pair((ptrdiff_t)0,(ptrdiff_t)0);
+    else
+        for (int i=0;i < M;i++) pd[i] = std::make_pair((ptrdiff_t)p4[2*i],(ptrdiff_t)p4[2*i+1]);
+    Eigen::Tensor<T, M, L> p0 = in.pad(pd);
+    if (s3 == NULL)
+        for (int i=0;i < M;i++) bd[i] = std::make_pair((ptrdiff_t)0,(ptrdiff_t)0);
+    else
+        for (int i=0;i < M;i++) bd[i] = std::make_pair((ptrdiff_t)0,(ptrdiff_t)(d5[i] * (s3[i] - 1)));
+    Eigen::Tensor<T, M, L> gy = gi.pad(bd);
+    if (gy.size() != gi.size())
+    {
+        Eigen::array<Eigen::ptrdiff_t, 2*M-2> md;
+        md[0] = gy.dimension(0);md[2*M-3] = gy.dimension(M-1);
+        for (int i=1;i < 2*M-3;i=i+2) {md[i] = s3[(i+1)/2];md[i+1] = d5[(i+2)/2];}
+        Eigen::Tensor<T, 2*M-2, L> gr = gy.reshape(md);
+        Eigen::DSizes<Eigen::DenseIndex, 2*M-2> sx;
+        sx[0] = 0;sx[2*M-3] = 2*M-3;
+        for (int i=1;i < 2*M-3;i=i+2) {sx[i] = i+1; sx[i+1] = i;}
+        Eigen::Tensor<T, 2*M-2, L> gf = gr.shuffle(sx);
+        Eigen::array<Eigen::ptrdiff_t, M> sd;
+        for (int i=0;i < M;i++) sd[i] = d5[i] * s3[i];
+        Eigen::Tensor<T, M, L> gp = gf.reshape(sd);
+        Eigen::array<ptrdiff_t, M> st, ed;
+        for (int i=0;i < M;i++) st[i] = 0;
+        ed[0] = gp.dimension(0);ed[M-1] = gp.dimension(M-1);
+        for (int i=1;i < M-1;i++) ed[i] = p0.dimension(i) - n[i-1] + 1;
+        gy = gp.slice(st, ed);
+    }
+    Eigen::array<ptrdiff_t, M-1> cd;
+    for (int i=0;i < M-1;i++) cd[i] = i;
+    Eigen::array<int, M-2> zd;
+    for (int i=0;i < M-2;i++) zd[i] = n[i];
+    Eigen::TensorMap<Eigen::Tensor<T, M, L>> gw(o6, n);
+    for (int i = 0; i < p0.dimension(M-1); i++)
+    {
+        for (int j = 0; j < gy.dimension(M-1); j++)
+        {
+            Eigen::Tensor<T, M-1, L> cv = p0.template chip<M-1>(i).convolve(gy.template chip<M-1>(j), cd);
+            (gw.template chip<M-1>(j)).template chip<M-2>(i) = cv.reshape(zd);
+        }
+    }
+    for (int i=0;i < M-2;i++) zd[i] = m[i+1];
+    xd[0] = xd[M-1] = std::make_pair((ptrdiff_t)0,(ptrdiff_t)0);
+    for (int i=1;i < M-1;i++) xd[i] = std::make_pair((ptrdiff_t)0,(ptrdiff_t)(m[i] + n[i-1] - 1 - gy.dimension(i)));
+    Eigen::Tensor<T, M, L> gy_ = gy.pad(xd);
+    Eigen::TensorMap<Eigen::Tensor<T, M, L>> gx(o7, m);
+    for (int i = 0; i < gy_.dimension(0); i++)
+    {
+        for (int j = 0; j < kr.dimension(M-2); j++)
+        {
+            Eigen::Tensor<T, M-1, L> cv = gy_.template chip<0>(i).convolve(kr.template chip<M-2>(j), cd);
+            (gx.template chip<M-1>(j)).template chip<0>(i) = cv.reshape(zd);
+        }
+    }
+    Eigen::array<int, M-1> ud, kd;
+    for (int i=0;i < M-1;i++) {ud[i] = 1;kd[i] = q[i];}
+    Eigen::TensorMap<Eigen::Tensor<T, M, L>> gb(o8, q);
+    for (int i = 0; i < gb.dimension(M-1); i++)
+    {
+        Eigen::Tensor<T, M-1, L> sb = gi.template chip<M-1>(i).sum().reshape(ud);
+        gb.template chip<M-1>(i) = sb.broadcast(kd);
+    }
+}
+
+extern "C" void pg_tensor_convt(int oid,void* i1,int n1,int* d1,void* k2,int* d2,int* s3,int* p4,void* g5,int* d5,void* o6,void* o7,void* o8)
+{
+    if (oid == 700)
+    {
+        if (n1 == 3)
+            tensor_convt<float, Eigen::RowMajor, 3>((float*) i1, d1, (float*) k2, d2, s3, p4, (float*) g5, d5, (float*) o6, (float*) o7, (float*) o8);
+        else if (n1 == 4)
+            tensor_convt<float, Eigen::RowMajor, 4>((float*) i1, d1, (float*) k2, d2, s3, p4, (float*) g5, d5, (float*) o6, (float*) o7, (float*) o8);
+        else if (n1 == 5)
+            tensor_convt<float, Eigen::RowMajor, 5>((float*) i1, d1, (float*) k2, d2, s3, p4, (float*) g5, d5, (float*) o6, (float*) o7, (float*) o8);
+    }
+    else if (oid == 701)
+    {
+        if (n1 == 3)
+            tensor_convt<double, Eigen::RowMajor, 3>((double*) i1, d1, (double*) k2, d2, s3, p4, (double*) g5, d5, (double*) o6, (double*) o7, (double*) o8);
+        else if (n1 == 4)
+            tensor_convt<double, Eigen::RowMajor, 4>((double*) i1, d1, (double*) k2, d2, s3, p4, (double*) g5, d5, (double*) o6, (double*) o7, (double*) o8);
+        else if (n1 == 5)
+            tensor_convt<double, Eigen::RowMajor, 5>((double*) i1, d1, (double*) k2, d2, s3, p4, (double*) g5, d5, (double*) o6, (double*) o7, (double*) o8);
+    }
+}
