@@ -946,7 +946,7 @@ Datum array_matmul(PG_FUNCTION_ARGS)
     ArrayType *a1, *a2, *a3, *a4, *a5;
     char      *p1, *p2;
     Oid        t1,  t2;
-    int32      n1,  n2,  c1,  c2;
+    int32      n1,  n2;
     int32      n3,  n4,  c3,  c4;
     int32      ls,  rs,	 lz,  rz;
     int32     *d1, *d2, *d3, *d4, *p3;
@@ -976,10 +976,6 @@ Datum array_matmul(PG_FUNCTION_ARGS)
     n3 = ARR_NDIM(a3);
     if (n3 != 1) elog(ERROR, "matrix multiplication dimensions array must be 1 dimension.");
     d3 = ARR_DIMS(a3);
-    c1 = ArrayGetNItems(n1, d1);
-    c2 = ArrayGetNItems(n2, d2);
-    if (c1 != c2)
-        elog(ERROR, "the number of elements in the left and right matrix arrays must be consistent.");
     c3 = ArrayGetNItems(n3, d3);
     if (c3 != 2) elog(ERROR, "matrix multiplication dimensions array length must be 2.");
     p1 = ARR_DATA_PTR(a1);
