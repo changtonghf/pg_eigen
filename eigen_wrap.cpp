@@ -738,7 +738,7 @@ void tensor_convolve(T* i1,int* d1,T* k2,int* d2,int* s3,int* p4,T* o5,int* d5)
     else
     {
         for (int i=0;i < M-1;i++)
-            pd[i] = std::make_pair((ptrdiff_t)p4[2*i],(ptrdiff_t)p4[2*i+1]);
+            pd[i] = std::make_pair((ptrdiff_t)p4[2*i+2],(ptrdiff_t)p4[2*i+3]);
     }
     Eigen::array<ptrdiff_t, M-1> cd;
     for (int i=0;i < M-1;i++) cd[i] = i;
