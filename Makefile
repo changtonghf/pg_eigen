@@ -17,4 +17,6 @@ include $(top_builddir)/src/Makefile.global
 include $(top_srcdir)/contrib/contrib-global.mk
 endif
 
-override CXXFLAGS += -mavx
+ifeq ($(shell grep avx2 /proc/cpuinfo > /dev/null && echo 1), 1)
+override CXXFLAGS += -mavx2
+endif
