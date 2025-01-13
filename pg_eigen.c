@@ -17,6 +17,7 @@ extern void pg_tensor_fft(int oid,bool forward,char* in,int n1,int* d1,void* out
 extern void pg_tensor_random(int fn,int c1,double* out,double a1,double b1,int s1);
 extern void pg_tensor_shuffle(int oid,int s1,int c1,void* out);
 extern void pg_tensor_binaryop(int oid,int fn,int c1,void* a1,void* a2);
+extern void pg_tensor_unaryop(int oid,int fn,int c1,void* a1);
 extern void pg_tensor_convolve(int oid,void* i1,int n1,int* d1,void* k2,int* d2,int* s3,int* p4,void* o5,int* d5);
 extern void pg_tensor_pool(int oid,int fn,void* i1,int n1,int* d1,int* k2,int* s3,int* p4,void* o5,int* d5);
 extern void pg_tensor_activate(int oid,int fn,int c1,void* a1,float g);
@@ -33,6 +34,7 @@ PG_FUNCTION_INFO_V1(array_fft);
 PG_FUNCTION_INFO_V1(array_random);
 PG_FUNCTION_INFO_V1(array_shuffle);
 PG_FUNCTION_INFO_V1(array_binaryop);
+PG_FUNCTION_INFO_V1(array_unaryop);
 PG_FUNCTION_INFO_V1(array_convolve);
 PG_FUNCTION_INFO_V1(array_pool);
 PG_FUNCTION_INFO_V1(array_activate);
@@ -472,6 +474,44 @@ Datum array_binaryop(PG_FUNCTION_ARGS)
         pg_tensor_binaryop(t1,10, c1, (void*) p1, (void*) p2);
     else
         elog(ERROR, "\"%s\" is currently not supported in tensor broadcasting calculation.", fn);
+
+    PG_RETURN_ARRAYTYPE_P(a1);
+}
+
+Datum array_unaryop(PG_FUNCTION_ARGS)
+{
+    ArrayType *a1;
+    char      *fn, *p1;
+    Oid        t1;
+    int        n1, *d1, c1;
+
+    if (PG_ARGISNULL(0))
+        elog(ERROR, "calculate function name not specified.");
+    fn = text_to_cstring(PG_GETARG_TEXT_P(0));
+    if (PG_ARGISNULL(1)) PG_RETURN_NULL();
+    a1 = PG_GETARG_ARRAYTYPE_P(1);
+    t1 = ARR_ELEMTYPE(a1);
+    if (t1 != INT2OID && t1 != INT4OID && t1 != INT8OID && t1 != FLOAT4OID && t1 != FLOAT8OID)
+        elog(ERROR, "array argument type must be number type.");
+    n1 = ARR_NDIM(a1);
+    d1 = ARR_DIMS(a1);
+    c1 = ArrayGetNItems(n1, d1);
+    p1 = ARR_DATA_PTR(a1);
+
+    if (strcasecmp(fn, "sqrt") == 0)
+        pg_tensor_unaryop(t1, 1, c1, (void*) p1);
+    else if (strcasecmp(fn, "abs") == 0)
+        pg_tensor_unaryop(t1, 2, c1, (void*) p1);
+    else if (strcasecmp(fn, "sigmoid") == 0)
+        pg_tensor_unaryop(t1, 3, c1, (void*) p1);
+    else if (strcasecmp(fn, "exp") == 0)
+        pg_tensor_unaryop(t1, 4, c1, (void*) p1);
+    else if (strcasecmp(fn, "log") == 0)
+        pg_tensor_unaryop(t1, 5, c1, (void*) p1);
+    else if (strcasecmp(fn, "sign") == 0)
+        pg_tensor_unaryop(t1, 6, c1, (void*) p1);
+    else
+        elog(ERROR, "\"%s\" is currently not supported in tensor unary calculation.", fn);
 
     PG_RETURN_ARRAYTYPE_P(a1);
 }

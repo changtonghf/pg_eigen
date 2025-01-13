@@ -21,6 +21,12 @@ CREATE FUNCTION array_binaryop(text,   int8[],   int8[]) RETURNS   int8[] AS 'MO
 CREATE FUNCTION array_binaryop(text, float4[], float4[]) RETURNS float4[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
 CREATE FUNCTION array_binaryop(text, float8[], float8[]) RETURNS float8[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
 
+CREATE FUNCTION array_unaryop(text,   int2[]) RETURNS   int2[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
+CREATE FUNCTION array_unaryop(text,   int4[]) RETURNS   int4[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
+CREATE FUNCTION array_unaryop(text,   int8[]) RETURNS   int8[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
+CREATE FUNCTION array_unaryop(text, float4[]) RETURNS float4[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
+CREATE FUNCTION array_unaryop(text, float8[]) RETURNS float8[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
+
 CREATE FUNCTION array_convolve(text, float4[], float4[], int4[], text) RETURNS float4[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
 CREATE FUNCTION array_convolve(text, float8[], float8[], int4[], text) RETURNS float8[] AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
 

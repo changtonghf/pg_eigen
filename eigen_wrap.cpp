@@ -720,6 +720,49 @@ extern "C" void pg_tensor_binaryop(int oid,int fn,int c1,void* a1,void* a2)
         tensor_binaryop<long, Eigen::RowMajor>(fn, c1, (long*) a1, (long*) a2);
 }
 
+template<typename T,int L>
+void tensor_unaryop(int fn,int m,T* a)
+{
+    Eigen::TensorMap<Eigen::Tensor<T, 1, L>> x(a, m);
+    switch (fn)
+    {
+    case 1:
+        x = x.sqrt();
+        break;
+    case 2:
+        x = x.abs();
+        break;
+    case 3:
+        x = x.sigmoid();
+        break;
+    case 4:
+        x = x.exp();
+        break;
+    case 5:
+        x = x.log();
+        break;
+    case 6:
+        x = x.sign();
+        break;
+    default:
+        break;
+    }
+}
+
+extern "C" void pg_tensor_unaryop(int oid,int fn,int c1,void* a1)
+{
+    if (oid == 700)
+        tensor_unaryop<float, Eigen::RowMajor>(fn, c1, (float*) a1);
+    else if (oid == 701)
+        tensor_unaryop<double, Eigen::RowMajor>(fn, c1, (double*) a1);
+    else if (oid ==  21)
+        tensor_unaryop<short, Eigen::RowMajor>(fn, c1, (short*) a1);
+    else if (oid ==  23)
+        tensor_unaryop<int, Eigen::RowMajor>(fn, c1, (int*) a1);
+    else if (oid ==  20)
+        tensor_unaryop<long, Eigen::RowMajor>(fn, c1, (long*) a1);
+}
+
 template<typename T,int L,int M>
 void tensor_convolve(T* i1,int* d1,T* k2,int* d2,int* s3,int* p4,T* o5,int* d5)
 {
