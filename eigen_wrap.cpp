@@ -1592,6 +1592,10 @@ void tensor_convt(T* i1,int* d1,T* k2,int* d2,int* s3,int* p4,T* g5,int* d5,T* o
     Eigen::array<int, M> n;
     for (int i=0;i < M;i++) n[i] = d2[i];
     Eigen::TensorMap<Eigen::Tensor<T, M, L>> kr(k2, n);
+    Eigen::array<int, M> r;
+    r[M-1] = r[M-2] = 0;
+    for (int i=0;i < M-2;i++) r[i] = 1;
+    Eigen::Tensor<T, M, L> kr_ = kr.reverse(r);
     Eigen::array<int, M> q;
     for (int i=0;i < M;i++) q[i] = d5[i];
     Eigen::TensorMap<Eigen::Tensor<T, M, L>> gi(g5, q);
@@ -1643,18 +1647,16 @@ void tensor_convt(T* i1,int* d1,T* k2,int* d2,int* s3,int* p4,T* g5,int* d5,T* o
     for (int i=1;i < M-1;i++)
     {
         ptrdiff_t p2 = m[i] + n[i-1] - 1 - gy.dimension(i);
-        xd[i] = std::make_pair(p2 / 2,(p2 / 2) + (p2 % 2));
+        xd[i] = std::make_pair((p2 / 2) + (p2 % 2),p2 / 2);
     }
     Eigen::Tensor<T, M, L> gy_ = gy.pad(xd);
     Eigen::TensorMap<Eigen::Tensor<T, M, L>> gx(o7, m);
-    Eigen::array<int, M-2> r;
-    for (int i=0;i < M-2;i++) r[i] = 1;
     for (int i = 0; i < gy_.dimension(0); i++)
     {
-        for (int j = 0; j < kr.dimension(M-2); j++)
+        for (int j = 0; j < kr_.dimension(M-2); j++)
         {
-            Eigen::Tensor<T, M-2, L> cv = gy_.template chip<0>(i).convolve(kr.template chip<M-2>(j), cd).reshape(zd);
-            (gx.template chip<M-1>(j)).template chip<0>(i) = cv.reverse(r);
+            Eigen::Tensor<T, M-1, L> cv = gy_.template chip<0>(i).convolve(kr_.template chip<M-2>(j), cd);
+            (gx.template chip<M-1>(j)).template chip<0>(i) = cv.reshape(zd);
         }
     }
     Eigen::array<int, M-1> ud, kd;
