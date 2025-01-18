@@ -583,3 +583,371 @@ select array_unaryop('sign', array[[-10,-10,-10,-10,-10,-10,-10,-10],[11,11,11,1
  {{-1,-1,-1,-1,-1,-1,-1,-1},{1,1,1,1,1,1,1,1}}
 (1 row)
 ```
+## application demo
+### 01. cat/dog recognition
+```sql
+create table if not exists public.cv2_cat_dog_hw3c(id bigserial primary key,label int4,image float8[]);
+create table if not exists public.cat_dog_model(layer int4,name text,value float8[]);
+--load train data. psql -f sql/cv2_cat_dog_hw3c.sql or \i sql/cv2_cat_dog_hw3c.sql
+
+--create convolutional neural network train procedure
+create or replace procedure cat_dog_train(float8 default 0.95) as
+$$
+declare
+    a0 bigint[] := (select array_shuffle(array_agg(id),0) from public.cv2_cat_dog_hw3c);
+    t0 bigint := 0;
+    i  bigint;
+    r1 record;
+    st timestamp;
+    ed timestamp;
+---------------------------------------------------------------------------------------------------constant variables
+    ref int4[] := array_fill(255.0::float8, array[32,64,64,03]);
+    d1r int4[] := array_fill(000.0::float8, array[32,64,64,32]);
+    d2r int4[] := array_fill(000.0::float8, array[32,32,32,32]);
+    d3r int4[] := array_fill(000.0::float8, array[32,16,16,64]);
+    d5r int4[] := array_fill(000.0::float8, array[00032,01024]);
+    d5s int4[] := array_dropout(array_fill(1.0::float8, array[32,1024]), 0.3, NULL, 20);
+    d6s int4[] := array_dropout(array_fill(1.0::float8, array[32,0002]), 0.3, NULL, 20);
+---------------------------------------------------------------------------------------------------Weights/Biases
+    w1  float8[] := array_random('truncated_normal',array[03,03,03,32]::int4[],NULL,0.05,20);
+    b1  float8[] := array_fill(0.05::float8,array[32,64,64,32]::int4[]);
+    w2  float8[] := array_random('truncated_normal',array[03,03,32,32]::int4[],NULL,0.05,20);
+    b2  float8[] := array_fill(0.05::float8,array[32,32,32,32]::int4[]);
+    w3  float8[] := array_random('truncated_normal',array[03,03,32,64]::int4[],NULL,0.05,20);
+    b3  float8[] := array_fill(0.05::float8,array[32,16,16,64]::int4[]);
+    w5  float8[] := array_random('truncated_normal',array[04096,01024]::int4[],NULL,0.05,20);
+    b5  float8[] := array_fill(0.05::float8,array[00032,01024]::int4[]);
+    w6  float8[] := array_random('truncated_normal',array[01024,00002]::int4[],NULL,0.05,20);
+    b6  float8[] := array_fill(0.05::float8,array[00032,00002]::int4[]);
+---------------------------------------------------------------------------------------------------Mean Estimation/Variance Estimation
+    w1m float8[] := array_fill(0::float8,array[03,03,03,32]);
+    b1m float8[] := array_fill(0::float8,array[32,64,64,32]);
+    w2m float8[] := array_fill(0::float8,array[03,03,32,32]);
+    b2m float8[] := array_fill(0::float8,array[32,32,32,32]);
+    w3m float8[] := array_fill(0::float8,array[03,03,32,64]);
+    b3m float8[] := array_fill(0::float8,array[32,16,16,64]);
+    w5m float8[] := array_fill(0::float8,array[04096,01024]);
+    b5m float8[] := array_fill(0::float8,array[00032,01024]);
+    w6m float8[] := array_fill(0::float8,array[01024,00002]);
+    b6m float8[] := array_fill(0::float8,array[00032,00002]);
+    w1v float8[] := array_fill(0::float8,array[03,03,03,32]);
+    b1v float8[] := array_fill(0::float8,array[32,64,64,32]);
+    w2v float8[] := array_fill(0::float8,array[03,03,32,32]);
+    b2v float8[] := array_fill(0::float8,array[32,32,32,32]);
+    w3v float8[] := array_fill(0::float8,array[03,03,32,64]);
+    b3v float8[] := array_fill(0::float8,array[32,16,16,64]);
+    w5v float8[] := array_fill(0::float8,array[04096,01024]);
+    b5v float8[] := array_fill(0::float8,array[00032,01024]);
+    w6v float8[] := array_fill(0::float8,array[01024,00002]);
+    b6v float8[] := array_fill(0::float8,array[00032,00002]);
+    mht float8[];
+    vht float8[];
+---------------------------------------------------------------------------------------------------layer
+    i0  float8[];
+    l0  float8[];
+    l1  float8[];
+    l2  float8[];
+    l3  float8[];
+    l4  float8[];
+    l5  float8[];
+    l6  float8[];
+    e7  float8[];
+    c7  float8[];
+    s7  float8[];
+    a7  float8[];
+---------------------------------------------------------------------------------------------------layer internal variables
+    l1a float8[];
+    l1b float8[];
+    l1c float8[];
+    l2a float8[];
+    l2b float8[];
+    l2c float8[];
+    l3a float8[];
+    l3b float8[];
+    l3c float8[];
+    a7a float8[];
+    a7b float8[];
+    a7c float8[];
+---------------------------------------------------------------------------------------------------gradient
+    ∂6e float8[];
+    ∂6d float8[];
+    ∂6w float8[];
+    ∂6x float8[];
+    ∂6b float8[];
+    ∂5r float8[];
+    ∂5d float8[];
+    ∂5w float8[];
+    ∂5x float8[];
+    ∂5b float8[];
+    ∂4x float8[];
+    ∂3r float8[];
+    ∂3p float8[];
+    ∂3w float8[];
+    ∂3x float8[];
+    ∂3b float8[];
+    ∂2r float8[];
+    ∂2p float8[];
+    ∂2w float8[];
+    ∂2x float8[];
+    ∂2b float8[];
+    ∂1r float8[];
+    ∂1p float8[];
+    ∂1w float8[];
+    ∂1x float8[];
+    ∂1b float8[];
+---------------------------------------------------------------------------------------------------epsilon
+    w1ε float8[] := array_fill(1.0e-8::float8, array[03,03,03,32]);
+    b1ε float8[] := array_fill(1.0e-8::float8, array[32,64,64,32]);
+    w2ε float8[] := array_fill(1.0e-8::float8, array[03,03,32,32]);
+    b2ε float8[] := array_fill(1.0e-8::float8, array[32,32,32,32]);
+    w3ε float8[] := array_fill(1.0e-8::float8, array[03,03,32,64]);
+    b3ε float8[] := array_fill(1.0e-8::float8, array[32,16,16,64]);
+    w5ε float8[] := array_fill(1.0e-8::float8, array[04096,01024]);
+    b5ε float8[] := array_fill(1.0e-8::float8, array[00032,01024]);
+    w6ε float8[] := array_fill(1.0e-8::float8, array[01024,00002]);
+    b6ε float8[] := array_fill(1.0e-8::float8, array[00032,00002]);
+---------------------------------------------------------------------------------------------------learning rate
+    w1α float8[] := array_fill(1.0e-4::float8, array[03,03,03,32]);
+    b1α float8[] := array_fill(1.0e-4::float8, array[32,64,64,32]);
+    w2α float8[] := array_fill(1.0e-4::float8, array[03,03,32,32]);
+    b2α float8[] := array_fill(1.0e-4::float8, array[32,32,32,32]);
+    w3α float8[] := array_fill(1.0e-4::float8, array[03,03,32,64]);
+    b3α float8[] := array_fill(1.0e-4::float8, array[32,16,16,64]);
+    w5α float8[] := array_fill(1.0e-4::float8, array[04096,01024]);
+    b5α float8[] := array_fill(1.0e-4::float8, array[00032,01024]);
+    w6α float8[] := array_fill(1.0e-4::float8, array[01024,00002]);
+    b6α float8[] := array_fill(1.0e-4::float8, array[00032,00002]);
+---------------------------------------------------------------------------------------------------beta1
+    w1β float8[] := array_fill(0.9000::float8, array[03,03,03,32]);
+    b1β float8[] := array_fill(0.9000::float8, array[32,64,64,32]);
+    w2β float8[] := array_fill(0.9000::float8, array[03,03,32,32]);
+    b2β float8[] := array_fill(0.9000::float8, array[32,32,32,32]);
+    w3β float8[] := array_fill(0.9000::float8, array[03,03,32,64]);
+    b3β float8[] := array_fill(0.9000::float8, array[32,16,16,64]);
+    w5β float8[] := array_fill(0.9000::float8, array[04096,01024]);
+    b5β float8[] := array_fill(0.9000::float8, array[00032,01024]);
+    w6β float8[] := array_fill(0.9000::float8, array[01024,00002]);
+    b6β float8[] := array_fill(0.9000::float8, array[00032,00002]);
+---------------------------------------------------------------------------------------------------beta2
+    w1γ float8[] := array_fill(0.9990::float8, array[03,03,03,32]);
+    b1γ float8[] := array_fill(0.9990::float8, array[32,64,64,32]);
+    w2γ float8[] := array_fill(0.9990::float8, array[03,03,32,32]);
+    b2γ float8[] := array_fill(0.9990::float8, array[32,32,32,32]);
+    w3γ float8[] := array_fill(0.9990::float8, array[03,03,32,64]);
+    b3γ float8[] := array_fill(0.9990::float8, array[32,16,16,64]);
+    w5γ float8[] := array_fill(0.9990::float8, array[04096,01024]);
+    b5γ float8[] := array_fill(0.9990::float8, array[00032,01024]);
+    w6γ float8[] := array_fill(0.9990::float8, array[01024,00002]);
+    b6γ float8[] := array_fill(0.9990::float8, array[00032,00002]);
+---------------------------------------------------------------------------------------------------1-beta1
+    w1β_ float8[] := array_fill(0.100::float8, array[03,03,03,32]);
+    b1β_ float8[] := array_fill(0.100::float8, array[32,64,64,32]);
+    w2β_ float8[] := array_fill(0.100::float8, array[03,03,32,32]);
+    b2β_ float8[] := array_fill(0.100::float8, array[32,32,32,32]);
+    w3β_ float8[] := array_fill(0.100::float8, array[03,03,32,64]);
+    b3β_ float8[] := array_fill(0.100::float8, array[32,16,16,64]);
+    w5β_ float8[] := array_fill(0.100::float8, array[04096,01024]);
+    b5β_ float8[] := array_fill(0.100::float8, array[00032,01024]);
+    w6β_ float8[] := array_fill(0.100::float8, array[01024,00002]);
+    b6β_ float8[] := array_fill(0.100::float8, array[00032,00002]);
+---------------------------------------------------------------------------------------------------1-beta2
+    w1γ_ float8[] := array_fill(0.001::float8, array[03,03,03,32]);
+    b1γ_ float8[] := array_fill(0.001::float8, array[32,64,64,32]);
+    w2γ_ float8[] := array_fill(0.001::float8, array[03,03,32,32]);
+    b2γ_ float8[] := array_fill(0.001::float8, array[32,32,32,32]);
+    w3γ_ float8[] := array_fill(0.001::float8, array[03,03,32,64]);
+    b3γ_ float8[] := array_fill(0.001::float8, array[32,16,16,64]);
+    w5γ_ float8[] := array_fill(0.001::float8, array[04096,01024]);
+    b5γ_ float8[] := array_fill(0.001::float8, array[00032,01024]);
+    w6γ_ float8[] := array_fill(0.001::float8, array[01024,00002]);
+    b6γ_ float8[] := array_fill(0.001::float8, array[00032,00002]);
+---------------------------------------------------------------------------------------------------
+begin
+    create temporary table if not exists cv_cat_dog_tensor_set(gid bigint,labels bigint[],images double precision[]) on commit preserve rows;
+    execute 'truncate table cv_cat_dog_tensor_set';
+    commit;
+    insert into cv_cat_dog_tensor_set(gid,labels,images)
+    select gid,array_agg(label order by rn),array_agg(image order by rn)
+      from (select x.rn,(x.rn-1)/32 as gid,p.id,case p.label when 0 then array[1,0] else array[0,1] end as label,p.image
+              from public.cv2_cat_dog_hw3c p
+        inner join unnest(a0) with ordinality as x(id,rn)
+                on p.id = x.id
+             order by x.rn asc) s
+     group by gid;
+    delete from cv_cat_dog_tensor_set where gid = (select max(gid) from cv_cat_dog_tensor_set);
+    for i in 1 .. 30
+    loop
+        for r1 in select gid,labels,images from cv_cat_dog_tensor_set
+        loop
+            st := clock_timestamp();
+            i0 := array_binaryop('div',r1.images,ref);
+            l0 := cast(r1.labels as float8[]);
+---------------------------------------------------------------------------------------------------conv2d
+            select array_convolve('NHWC',i0,w1,array[1,1,1,1]::int4[],'SAME') into l1a;
+            select array_binaryop('add',l1a,b1) into l1b;
+            select array_activate('relu', l1b, NULL) into l1c;
+            select array_pool('max','NHWC',l1c,array[1,2,2,1]::int4[],array[1,2,2,1]::int4[],'SAME') into l1;
+---------------------------------------------------------------------------------------------------conv2d
+            select array_convolve('NHWC',l1,w2,array[1,1,1,1]::int4[],'SAME') into l2a;
+            select array_binaryop('add',l2a,b2) into l2b;
+            select array_activate('relu', l2b, NULL) into l2c;
+            select array_pool('max','NHWC',l2c,array[1,2,2,1]::int4[],array[1,2,2,1]::int4[],'SAME') into l2;
+---------------------------------------------------------------------------------------------------conv2d
+            select array_convolve('NHWC',l2,w3,array[1,1,1,1]::int4[],'SAME') into l3a;
+            select array_binaryop('add',l3a,b3) into l3b;
+            select array_activate('relu', l3b, NULL) into l3c;
+            select array_pool('max','NHWC',l3c,array[1,2,2,1]::int4[],array[1,2,2,1]::int4[],'SAME') into l3;
+---------------------------------------------------------------------------------------------------flatten
+            select array_reshape(l3,array[32,4096]::int4[]) into l4;
+---------------------------------------------------------------------------------------------------dense
+            select array_matmul(l4,w5, array[0,1]::int4[], NULL) into l5;
+            select array_binaryop('add',l5,b5) into l5;
+            select array_dropout(l5, 0.3, NULL, 20) into l5;
+            select array_activate('relu', l5, NULL) into l5;
+---------------------------------------------------------------------------------------------------dense
+            select array_matmul(l5,w6, array[0,1]::int4[], NULL) into l6;
+            select array_binaryop('add',l6,b6) into l6;
+            select array_dropout(l6, 0.3, NULL, 20) into l6;
+---------------------------------------------------------------------------------------------------loss
+            select array_loss('SCE', l6, l0, 1) into e7;
+            select array_reduce('mean', e7, NULL) into c7;
+---------------------------------------------------------------------------------------------------accuracy
+            select array_softmax(l6,1) into s7;
+            select array_argpos('argmax', s7, 1) into a7a;
+            select array_argpos('argmax', l0, 1) into a7b;
+            select array_binaryop('eq', a7a, a7b) into a7c;
+            select array_reduce('mean', a7c, NULL) into a7;
+---------------------------------------------------------------------------------------------------derivation
+            select array_binaryop('sub', array_softmax(l6,1), l0) into ∂6e; --[32,2]
+            select array_binaryop('mul', ∂6e, d6s) into ∂6d; --[32,2]
+            select array_matmul(l5, ∂6d, array[0,1]::int4[], array[true,false,false,false]) into ∂6w; --[1024,2]
+            select array_matmul(∂6d, w6, array[0,1]::int4[], array[false,true,false,false]) into ∂6x; --[32,1024]
+            ∂6b := ∂6d; --[32,2]
+-------------------------------------------------
+            select array_binaryop('mul', ∂6x, array_binaryop('gt', l5, d5r)) into ∂5r;
+            select array_binaryop('mul', ∂5r, d5s) into ∂5d; --[32,1024]
+            select array_matmul(l4, ∂5d, array[0,1]::int4[], array[true,false,false,false]) into ∂5w; --[4096,1024]
+            select array_matmul(∂5d, w5, array[0,1]::int4[], array[false,true,false,false]) into ∂5x; --[32,4096]
+            ∂5b := ∂6x; --[32,1024]
+-------------------------------------------------
+            select array_reshape(∂5x,array[32,8,8,64]::int4[]) into ∂4x; --[32,8,8,64]
+-------------------------------------------------
+            select array_unpool('max','NHWC',l3c,array[1,2,2,1]::int4[],array[1,2,2,1]::int4[],'SAME',∂4x) into ∂3p; --[32,16,16,64]
+            select array_binaryop('mul', ∂3p, array_binaryop('gt', l3c, d3r)) into ∂3r;
+            select ∂weight,∂input,∂bias into ∂3w,∂3x,∂3b from array_convt('NHWC',l2,w3,array[1,1,1,1]::int4[],'SAME',∂3r);
+-------------------------------------------------
+            select array_unpool('max','NHWC',l2c,array[1,2,2,1]::int4[],array[1,2,2,1]::int4[],'SAME',∂3x) into ∂2p; --[32,32,32,32]
+            select array_binaryop('mul', ∂2p, array_binaryop('gt', l2c, d2r)) into ∂2r;
+            select ∂weight,∂input,∂bias into ∂2w,∂2x,∂2b from array_convt('NHWC',l1,w2,array[1,1,1,1]::int4[],'SAME',∂2r);
+-------------------------------------------------
+            select array_unpool('max','NHWC',l1c,array[1,2,2,1]::int4[],array[1,2,2,1]::int4[],'SAME',∂2x) into ∂1p; --[32,64,64,32]
+            select array_binaryop('mul', ∂1p, array_binaryop('gt', l1c, d1r)) into ∂1r;
+            select ∂weight,∂input,∂bias into ∂1w,∂1x,∂1b from array_convt('NHWC',i0,w1,array[1,1,1,1]::int4[],'SAME',∂1r);
+---------------------------------------------------------------------------------------------------
+            t0 := t0 + 1;
+---------------------------------------------------------------------------------------------------AdamOptimizer
+            w1m := array_binaryop('add',array_binaryop('mul', w1m, w1β),array_binaryop('mul', w1β_, ∂1w));
+            w1v := array_binaryop('add',array_binaryop('mul', w1v, w1γ),array_binaryop('mul', w1γ_, array_binaryop('mul', ∂1w, ∂1w)));
+            mht := array_binaryop('div', w1m, array_fill(1 - power(0.900::float8,t0), array[03,03,03,32]));
+            vht := array_binaryop('div', w1v, array_fill(1 - power(0.999::float8,t0), array[03,03,03,32]));
+            w1  := array_binaryop('sub', w1, array_binaryop('div', array_binaryop('mul', mht, w1α),array_binaryop('add',array_unaryop('sqrt',vht),w1ε)));
+-------------------------------------------------
+            b1m := array_binaryop('add',array_binaryop('mul', b1m, b1β),array_binaryop('mul', b1β_, ∂1b));
+            b1v := array_binaryop('add',array_binaryop('mul', b1v, b1γ),array_binaryop('mul', b1γ_, array_binaryop('mul', ∂1b, ∂1b)));
+            mht := array_binaryop('div', b1m, array_fill(1 - power(0.900::float8,t0), array[32,64,64,32]));
+            vht := array_binaryop('div', b1v, array_fill(1 - power(0.999::float8,t0), array[32,64,64,32]));
+            b1  := array_binaryop('sub', b1, array_binaryop('div', array_binaryop('mul', mht, b1α),array_binaryop('add',array_unaryop('sqrt',vht),b1ε)));
+-------------------------------------------------
+            w2m := array_binaryop('add',array_binaryop('mul', w2m, w2β),array_binaryop('mul', w2β_, ∂2w));
+            w2v := array_binaryop('add',array_binaryop('mul', w2v, w2γ),array_binaryop('mul', w2γ_, array_binaryop('mul', ∂2w, ∂2w)));
+            mht := array_binaryop('div', w2m, array_fill(1 - power(0.900::float8,t0), array[03,03,32,32]));
+            vht := array_binaryop('div', w2v, array_fill(1 - power(0.999::float8,t0), array[03,03,32,32]));
+            w2  := array_binaryop('sub', w2, array_binaryop('div', array_binaryop('mul', mht, w2α),array_binaryop('add',array_unaryop('sqrt',vht),w2ε)));
+-------------------------------------------------
+            b2m := array_binaryop('add',array_binaryop('mul', b2m, b2β),array_binaryop('mul', b2β_, ∂2b));
+            b2v := array_binaryop('add',array_binaryop('mul', b2v, b2γ),array_binaryop('mul', b2γ_, array_binaryop('mul', ∂2b, ∂2b)));
+            mht := array_binaryop('div', b2m, array_fill(1 - power(0.900::float8,t0), array[32,32,32,32]));
+            vht := array_binaryop('div', b2v, array_fill(1 - power(0.999::float8,t0), array[32,32,32,32]));
+            b2  := array_binaryop('sub', b2, array_binaryop('div', array_binaryop('mul', mht, b2α),array_binaryop('add',array_unaryop('sqrt',vht),b2ε)));
+-------------------------------------------------
+            w3m := array_binaryop('add',array_binaryop('mul', w3m, w3β),array_binaryop('mul', w3β_, ∂3w));
+            w3v := array_binaryop('add',array_binaryop('mul', w3v, w3γ),array_binaryop('mul', w3γ_, array_binaryop('mul', ∂3w, ∂3w)));
+            mht := array_binaryop('div', w3m, array_fill(1 - power(0.900::float8,t0), array[03,03,32,64]));
+            vht := array_binaryop('div', w3v, array_fill(1 - power(0.999::float8,t0), array[03,03,32,64]));
+            w3  := array_binaryop('sub', w3, array_binaryop('div', array_binaryop('mul', mht, w3α),array_binaryop('add',array_unaryop('sqrt',vht),w3ε)));
+-------------------------------------------------
+            b3m := array_binaryop('add',array_binaryop('mul', b3m, b3β),array_binaryop('mul', b3β_, ∂3b));
+            b3v := array_binaryop('add',array_binaryop('mul', b3v, b3γ),array_binaryop('mul', b3γ_, array_binaryop('mul', ∂3b, ∂3b)));
+            mht := array_binaryop('div', b3m, array_fill(1 - power(0.900::float8,t0), array[32,16,16,64]));
+            vht := array_binaryop('div', b3v, array_fill(1 - power(0.999::float8,t0), array[32,16,16,64]));
+            b3  := array_binaryop('sub', b3, array_binaryop('div', array_binaryop('mul', mht, b3α),array_binaryop('add',array_unaryop('sqrt',vht),b3ε)));
+-------------------------------------------------
+            w5m := array_binaryop('add',array_binaryop('mul', w5m, w5β),array_binaryop('mul', w5β_, ∂5w));
+            w5v := array_binaryop('add',array_binaryop('mul', w5v, w5γ),array_binaryop('mul', w5γ_, array_binaryop('mul', ∂5w, ∂5w)));
+            mht := array_binaryop('div', w5m, array_fill(1 - power(0.900::float8,t0), array[04096,01024]));
+            vht := array_binaryop('div', w5v, array_fill(1 - power(0.999::float8,t0), array[04096,01024]));
+            w5  := array_binaryop('sub', w5, array_binaryop('div', array_binaryop('mul', mht, w5α),array_binaryop('add',array_unaryop('sqrt',vht),w5ε)));
+-------------------------------------------------
+            b5m := array_binaryop('add',array_binaryop('mul', b5m, b5β),array_binaryop('mul', b5β_, ∂5b));
+            b5v := array_binaryop('add',array_binaryop('mul', b5v, b5γ),array_binaryop('mul', b5γ_, array_binaryop('mul', ∂5b, ∂5b)));
+            mht := array_binaryop('div', b5m, array_fill(1 - power(0.900::float8,t0), array[00032,01024]));
+            vht := array_binaryop('div', b5v, array_fill(1 - power(0.999::float8,t0), array[00032,01024]));
+            b5  := array_binaryop('sub', b5, array_binaryop('div', array_binaryop('mul', mht, b5α),array_binaryop('add',array_unaryop('sqrt',vht),b5ε)));
+-------------------------------------------------
+            w6m := array_binaryop('add',array_binaryop('mul', w6m, w6β),array_binaryop('mul', w6β_, ∂6w));
+            w6v := array_binaryop('add',array_binaryop('mul', w6v, w6γ),array_binaryop('mul', w6γ_, array_binaryop('mul', ∂6w, ∂6w)));
+            mht := array_binaryop('div', w6m, array_fill(1 - power(0.900::float8,t0), array[01024,00002]));
+            vht := array_binaryop('div', w6v, array_fill(1 - power(0.999::float8,t0), array[01024,00002]));
+            w6  := array_binaryop('sub', w6, array_binaryop('div', array_binaryop('mul', mht, w6α),array_binaryop('add',array_unaryop('sqrt',vht),w6ε)));
+-------------------------------------------------
+            b6m := array_binaryop('add',array_binaryop('mul', b6m, b6β),array_binaryop('mul', b6β_, ∂6b));
+            b6v := array_binaryop('add',array_binaryop('mul', b6v, b6γ),array_binaryop('mul', b6γ_, array_binaryop('mul', ∂6b, ∂6b)));
+            mht := array_binaryop('div', b6m, array_fill(1 - power(0.900::float8,t0), array[00032,00002]));
+            vht := array_binaryop('div', b6v, array_fill(1 - power(0.999::float8,t0), array[00032,00002]));
+            b6  := array_binaryop('sub', b6, array_binaryop('div', array_binaryop('mul', mht, b6α),array_binaryop('add',array_unaryop('sqrt',vht),b6ε)));
+---------------------------------------------------------------------------------------------------
+            ed := clock_timestamp();
+            raise notice 'cost : %, epoch : %, accuracy : %', extract(epoch from (ed - st)), t0, a7;
+            if a7[1] > $1 then
+                raise notice 'epoch % train accuracy % meets expected goal %', t0, a7, $1;
+            end if;
+---------------------------------------------------------------------------------------------------
+        end loop;
+    end loop;
+---------------------------------------------------------------------------------------------------
+    insert into public.cat_dog_model(layer,name,value) values(1,'w1' ,w1 );
+    insert into public.cat_dog_model(layer,name,value) values(1,'b1' ,b1 );
+    insert into public.cat_dog_model(layer,name,value) values(2,'w2' ,w2 );
+    insert into public.cat_dog_model(layer,name,value) values(2,'b2' ,b2 );
+    insert into public.cat_dog_model(layer,name,value) values(3,'w3' ,w3 );
+    insert into public.cat_dog_model(layer,name,value) values(3,'b3' ,b3 );
+    insert into public.cat_dog_model(layer,name,value) values(5,'w5' ,w5 );
+    insert into public.cat_dog_model(layer,name,value) values(5,'b5' ,b5 );
+    insert into public.cat_dog_model(layer,name,value) values(6,'w6' ,w6 );
+    insert into public.cat_dog_model(layer,name,value) values(6,'b6' ,b6 );
+---------------------------------------------------------------------------------------------------
+    insert into public.cat_dog_model(layer,name,value) values(1,'w1m',w1m);
+    insert into public.cat_dog_model(layer,name,value) values(1,'b1m',b1m);
+    insert into public.cat_dog_model(layer,name,value) values(2,'w2m',w2m);
+    insert into public.cat_dog_model(layer,name,value) values(2,'b2m',b2m);
+    insert into public.cat_dog_model(layer,name,value) values(3,'w3m',w3m);
+    insert into public.cat_dog_model(layer,name,value) values(3,'b3m',b3m);
+    insert into public.cat_dog_model(layer,name,value) values(5,'w5m',w5m);
+    insert into public.cat_dog_model(layer,name,value) values(5,'b5m',b5m);
+    insert into public.cat_dog_model(layer,name,value) values(6,'w6m',w6m);
+    insert into public.cat_dog_model(layer,name,value) values(6,'b6m',b6m);
+---------------------------------------------------------------------------------------------------
+    insert into public.cat_dog_model(layer,name,value) values(1,'w1v',w1v);
+    insert into public.cat_dog_model(layer,name,value) values(1,'b1v',b1v);
+    insert into public.cat_dog_model(layer,name,value) values(2,'w2v',w2v);
+    insert into public.cat_dog_model(layer,name,value) values(2,'b2v',b2v);
+    insert into public.cat_dog_model(layer,name,value) values(3,'w3v',w3v);
+    insert into public.cat_dog_model(layer,name,value) values(3,'b3v',b3v);
+    insert into public.cat_dog_model(layer,name,value) values(5,'w5v',w5v);
+    insert into public.cat_dog_model(layer,name,value) values(5,'b5v',b5v);
+    insert into public.cat_dog_model(layer,name,value) values(6,'w6v',w6v);
+    insert into public.cat_dog_model(layer,name,value) values(6,'b6v',b6v);
+---------------------------------------------------------------------------------------------------
+end;
+$$ language plpgsql;
+```
