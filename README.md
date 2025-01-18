@@ -950,4 +950,7 @@ begin
 ---------------------------------------------------------------------------------------------------
 end;
 $$ language plpgsql;
+--start train
+call cat_dog_train(0.95);
+--a thousand years later, then dump result to sql file in sql folder
 ```
