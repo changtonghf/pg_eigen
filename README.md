@@ -953,4 +953,71 @@ $$ language plpgsql;
 --start train
 call cat_dog_train(0.95);
 --a thousand years later, then dump result to sql file in sql folder
+--create convolutional neural network predict function
+create or replace function cat_dog_predict(bigint) returns bigint as
+$$
+declare
+    im float8[] := (select array_agg(image) from public.cv2_cat_dog_predict where id = $1);
+---------------------------------------------------------------------------------------------------Weights/Biases
+    w1  float8[] := (select value from public.cat_dog_model where layer = 1 and name = 'w1');
+    b1  float8[] := (select value[1][1:64][1:64][1:32] from public.cat_dog_model where layer = 1 and name = 'b1');
+    w2  float8[] := (select value from public.cat_dog_model where layer = 2 and name = 'w2');
+    b2  float8[] := (select value[1][1:32][1:32][1:32] from public.cat_dog_model where layer = 2 and name = 'b2');
+    w3  float8[] := (select value from public.cat_dog_model where layer = 3 and name = 'w3');
+    b3  float8[] := (select value[1][1:16][1:16][1:64] from public.cat_dog_model where layer = 3 and name = 'b3');
+    w5  float8[] := (select value from public.cat_dog_model where layer = 5 and name = 'w5');
+    b5  float8[] := (select value[1][1:1024] from public.cat_dog_model where layer = 5 and name = 'b5');
+    w6  float8[] := (select value from public.cat_dog_model where layer = 6 and name = 'w6');
+    b6  float8[] := (select value[1][1:0002] from public.cat_dog_model where layer = 6 and name = 'b6');
+---------------------------------------------------------------------------------------------------layer
+    i0  float8[];
+    l0  float8[];
+    l1  float8[];
+    l2  float8[];
+    l3  float8[];
+    l4  float8[];
+    l5  float8[];
+    l6  float8[];
+    e7  float8[];
+    c7  float8[];
+    s7  float8[];
+    a7  float8[];
+---------------------------------------------------------------------------------------------------
+begin
+    i0 := array_binaryop('div',im,array_fill(255.0::float8, array[01,64,64,03]));
+---------------------------------------------------------------------------------------------------conv2d
+    select array_convolve('NHWC',i0,w1,array[1,1,1,1]::int4[],'SAME') into l1;
+    select array_binaryop('add',l1,b1) into l1;
+    select array_activate('relu', l1, NULL) into l1;
+    select array_pool('max','NHWC',l1,array[1,2,2,1]::int4[],array[1,2,2,1]::int4[],'SAME') into l1;
+---------------------------------------------------------------------------------------------------conv2d
+    select array_convolve('NHWC',l1,w2,array[1,1,1,1]::int4[],'SAME') into l2;
+    select array_binaryop('add',l2,b2) into l2;
+    select array_activate('relu', l2, NULL) into l2;
+    select array_pool('max','NHWC',l2,array[1,2,2,1]::int4[],array[1,2,2,1]::int4[],'SAME') into l2;
+---------------------------------------------------------------------------------------------------conv2d
+    select array_convolve('NHWC',l2,w3,array[1,1,1,1]::int4[],'SAME') into l3;
+    select array_binaryop('add',l3,b3) into l3;
+    select array_activate('relu', l3, NULL) into l3;
+    select array_pool('max','NHWC',l3,array[1,2,2,1]::int4[],array[1,2,2,1]::int4[],'SAME') into l3;
+---------------------------------------------------------------------------------------------------flatten
+    select array_reshape(l3,array[1,4096]::int4[]) into l4;
+---------------------------------------------------------------------------------------------------dense
+    select array_matmul(l4,w5, array[0,1]::int4[], NULL) into l5;
+    select array_binaryop('add',l5,b5) into l5;
+    select array_dropout(l5, 0.3, NULL, 20) into l5;
+    select array_activate('relu', l5, NULL) into l5;
+---------------------------------------------------------------------------------------------------dense
+    select array_matmul(l5,w6, array[0,1]::int4[], NULL) into l6;
+    select array_binaryop('add',l6,b6) into l6;
+    select array_dropout(l6, 0.3, NULL, 20) into l6;
+---------------------------------------------------------------------------------------------------predict
+    select array_softmax(l6,1) into s7;
+    select array_argpos('argmax', s7, 1) into a7;
+    return a7[1];
+end;
+$$ language plpgsql;
+--test predict
+select cat_dog_predict(1); --return 0 dog
+select cat_dog_predict(300); --return 1 cat
 ```
