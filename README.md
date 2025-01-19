@@ -953,6 +953,10 @@ $$ language plpgsql;
 --start train
 call cat_dog_train(0.95);
 --a thousand years later, then dump result to sql file in sql folder
+
+create table if not exists public.cv2_cat_dog_predict(id bigserial primary key,label int4,image float8[]);
+--load predict data. psql -f sql/cv2_cat_dog_predict.sql or \i sql/cv2_cat_dog_predict.sql
+
 --create convolutional neural network predict function
 create or replace function cat_dog_predict(bigint) returns bigint as
 $$
