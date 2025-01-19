@@ -964,15 +964,15 @@ declare
     im float8[] := (select array_agg(image) from public.cv2_cat_dog_predict where id = $1);
 ---------------------------------------------------------------------------------------------------Weights/Biases
     w1  float8[] := (select value from public.cat_dog_model where layer = 1 and name = 'w1');
-    b1  float8[] := (select value[1][1:64][1:64][1:32] from public.cat_dog_model where layer = 1 and name = 'b1');
+    b1  float8[] := (select value[1:1][1:64][1:64][1:32] from public.cat_dog_model where layer = 1 and name = 'b1');
     w2  float8[] := (select value from public.cat_dog_model where layer = 2 and name = 'w2');
-    b2  float8[] := (select value[1][1:32][1:32][1:32] from public.cat_dog_model where layer = 2 and name = 'b2');
+    b2  float8[] := (select value[1:1][1:32][1:32][1:32] from public.cat_dog_model where layer = 2 and name = 'b2');
     w3  float8[] := (select value from public.cat_dog_model where layer = 3 and name = 'w3');
-    b3  float8[] := (select value[1][1:16][1:16][1:64] from public.cat_dog_model where layer = 3 and name = 'b3');
+    b3  float8[] := (select value[1:1][1:16][1:16][1:64] from public.cat_dog_model where layer = 3 and name = 'b3');
     w5  float8[] := (select value from public.cat_dog_model where layer = 5 and name = 'w5');
-    b5  float8[] := (select value[1][1:1024] from public.cat_dog_model where layer = 5 and name = 'b5');
+    b5  float8[] := (select value[1:1][1:1024] from public.cat_dog_model where layer = 5 and name = 'b5');
     w6  float8[] := (select value from public.cat_dog_model where layer = 6 and name = 'w6');
-    b6  float8[] := (select value[1][1:0002] from public.cat_dog_model where layer = 6 and name = 'b6');
+    b6  float8[] := (select value[1:1][1:0002] from public.cat_dog_model where layer = 6 and name = 'b6');
 ---------------------------------------------------------------------------------------------------layer
     i0  float8[];
     l0  float8[];
