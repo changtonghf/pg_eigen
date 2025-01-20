@@ -7,7 +7,7 @@ PostgreSQL library for linear algebra algorithms
 git clone https://github.com/PX4/eigen.git
 sudo cp -r eigen/Eigen /usr/local/include/
 sudo cp -r eigen/unsupported /usr/local/include/
-git clone https://github.com/changtonghf/pg_eigen.git
+git clone -b 3.4 https://github.com/changtonghf/pg_eigen.git
 cd pg_eigen
 --compile & install
 make PG_CONFIG=/usr/pgsql-14/bin/pg_config
