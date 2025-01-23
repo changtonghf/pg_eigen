@@ -29,6 +29,8 @@ extern void pg_tensor_loss(int oid,int fn,void* i1,int n1,int* d1,void* i2,void*
 extern void pg_tensor_unpool(int oid,int fn,void* i1,int n1,int* d1,int* k2,int* s3,int* p4,void* g5,int* d5,void* o6);
 extern void pg_tensor_convt(int oid,void* i1,int n1,int* d1,void* k2,int* d2,int* s3,int* p4,void* g5,int* d5,void* o6,void* o7,void* o8);
 
+extern void pg_cuda_convolve(int oid,void* i1,int n1,int* d1,void* k2,int* d2,int* s3,int* p4,void* o5,int* d5);
+
 PG_FUNCTION_INFO_V1(array_reduce);
 PG_FUNCTION_INFO_V1(array_fft);
 PG_FUNCTION_INFO_V1(array_random);
