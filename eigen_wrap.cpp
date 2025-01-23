@@ -789,7 +789,7 @@ void tensor_convolve(T* i1,int* d1,T* k2,int* d2,int* s3,int* p4,T* o5,int* d5)
     if (s3 == NULL)
         for (int i=0;i < M-1;i++) st[i] = 1;
     else
-        for (int i=0;i < M-1;i++) st[i] = s3[i];
+        for (int i=0;i < M-1;i++) st[i] = s3[i+1];
     Eigen::array<int, M-2> x;
     for (int i=0;i < M-2;i++) x[i] = d5[i+1];
     Eigen::array<int, M> z;
