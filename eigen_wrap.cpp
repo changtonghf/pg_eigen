@@ -5,7 +5,7 @@
 #include <unsupported/Eigen/CXX11/Tensor>
 
 template<typename T,int L,int M>
-void tensor_reduce(int fn,T* in,int* d1,T* out)
+void eigen_reduce(int fn,T* in,int* d1,T* out)
 {
     Eigen::array<int, M> m;
     for (int i=0;i < M;i++) m[i] = d1[i];
@@ -38,7 +38,7 @@ void tensor_reduce(int fn,T* in,int* d1,T* out)
 }
 
 template<typename T,int L,int M,int N>
-void tensor_reduce(int fn,T* in,int* d1,T* out,int* d2)
+void eigen_reduce(int fn,T* in,int* d1,T* out,int* d2)
 {
     Eigen::array<int, M> m;
     for (int i=0;i < M;i++) m[i] = d1[i];
@@ -72,73 +72,73 @@ void tensor_reduce(int fn,T* in,int* d1,T* out,int* d2)
     }
 }
 
-extern "C" void pg_tensor_reduce(int oid,int fn,char* in,int n1,int* d1,void* out,int n2,int* d2)
+extern "C" void pg_eigen_reduce(int oid,int fn,char* in,int n1,int* d1,void* out,int n2,int* d2)
 {
     if (oid == 700)
     {
         if (n1 == 1)
         {
-            tensor_reduce<float, Eigen::RowMajor, 1>(fn, (float *)in, d1, (float *)out);
+            eigen_reduce<float, Eigen::RowMajor, 1>(fn, (float *)in, d1, (float *)out);
             return;
         }
         else if (n1 == 2)
         {
             if (n2 == 1)
-                tensor_reduce<float, Eigen::RowMajor, 2, 1>(fn, (float *)in, d1, (float *)out, d2);
+                eigen_reduce<float, Eigen::RowMajor, 2, 1>(fn, (float *)in, d1, (float *)out, d2);
             else
-                tensor_reduce<float, Eigen::RowMajor, 2>(fn, (float *)in, d1, (float *)out);
+                eigen_reduce<float, Eigen::RowMajor, 2>(fn, (float *)in, d1, (float *)out);
             return;
         }
         else if (n1 == 3)
         {
             if (n2 == 1)
-                tensor_reduce<float, Eigen::RowMajor, 3, 1>(fn, (float *)in, d1, (float *)out, d2);
+                eigen_reduce<float, Eigen::RowMajor, 3, 1>(fn, (float *)in, d1, (float *)out, d2);
             else if (n2 == 2)
-                tensor_reduce<float, Eigen::RowMajor, 3, 2>(fn, (float *)in, d1, (float *)out, d2);
+                eigen_reduce<float, Eigen::RowMajor, 3, 2>(fn, (float *)in, d1, (float *)out, d2);
             else
-                tensor_reduce<float, Eigen::RowMajor, 3>(fn, (float *)in, d1, (float *)out);
+                eigen_reduce<float, Eigen::RowMajor, 3>(fn, (float *)in, d1, (float *)out);
             return;
         }
         else if (n1 == 4)
         {
             if (n2 == 1)
-                tensor_reduce<float, Eigen::RowMajor, 4, 1>(fn, (float *)in, d1, (float *)out, d2);
+                eigen_reduce<float, Eigen::RowMajor, 4, 1>(fn, (float *)in, d1, (float *)out, d2);
             else if (n2 == 2)
-                tensor_reduce<float, Eigen::RowMajor, 4, 2>(fn, (float *)in, d1, (float *)out, d2);
+                eigen_reduce<float, Eigen::RowMajor, 4, 2>(fn, (float *)in, d1, (float *)out, d2);
             else if (n2 == 3)
-                tensor_reduce<float, Eigen::RowMajor, 4, 3>(fn, (float *)in, d1, (float *)out, d2);
+                eigen_reduce<float, Eigen::RowMajor, 4, 3>(fn, (float *)in, d1, (float *)out, d2);
             else
-                tensor_reduce<float, Eigen::RowMajor, 4>(fn, (float *)in, d1, (float *)out);
+                eigen_reduce<float, Eigen::RowMajor, 4>(fn, (float *)in, d1, (float *)out);
             return;
         }
         else if (n1 == 5)
         {
             if (n2 == 1)
-                tensor_reduce<float, Eigen::RowMajor, 5, 1>(fn, (float *)in, d1, (float *)out, d2);
+                eigen_reduce<float, Eigen::RowMajor, 5, 1>(fn, (float *)in, d1, (float *)out, d2);
             else if (n2 == 2)
-                tensor_reduce<float, Eigen::RowMajor, 5, 2>(fn, (float *)in, d1, (float *)out, d2);
+                eigen_reduce<float, Eigen::RowMajor, 5, 2>(fn, (float *)in, d1, (float *)out, d2);
             else if (n2 == 3)
-                tensor_reduce<float, Eigen::RowMajor, 5, 3>(fn, (float *)in, d1, (float *)out, d2);
+                eigen_reduce<float, Eigen::RowMajor, 5, 3>(fn, (float *)in, d1, (float *)out, d2);
             else if (n2 == 4)
-                tensor_reduce<float, Eigen::RowMajor, 5, 4>(fn, (float *)in, d1, (float *)out, d2);
+                eigen_reduce<float, Eigen::RowMajor, 5, 4>(fn, (float *)in, d1, (float *)out, d2);
             else
-                tensor_reduce<float, Eigen::RowMajor, 5>(fn, (float *)in, d1, (float *)out);
+                eigen_reduce<float, Eigen::RowMajor, 5>(fn, (float *)in, d1, (float *)out);
             return;
         }
         else if (n1 == 6)
         {
             if (n2 == 1)
-                tensor_reduce<float, Eigen::RowMajor, 6, 1>(fn, (float *)in, d1, (float *)out, d2);
+                eigen_reduce<float, Eigen::RowMajor, 6, 1>(fn, (float *)in, d1, (float *)out, d2);
             else if (n2 == 2)
-                tensor_reduce<float, Eigen::RowMajor, 6, 2>(fn, (float *)in, d1, (float *)out, d2);
+                eigen_reduce<float, Eigen::RowMajor, 6, 2>(fn, (float *)in, d1, (float *)out, d2);
             else if (n2 == 3)
-                tensor_reduce<float, Eigen::RowMajor, 6, 3>(fn, (float *)in, d1, (float *)out, d2);
+                eigen_reduce<float, Eigen::RowMajor, 6, 3>(fn, (float *)in, d1, (float *)out, d2);
             else if (n2 == 4)
-                tensor_reduce<float, Eigen::RowMajor, 6, 4>(fn, (float *)in, d1, (float *)out, d2);
+                eigen_reduce<float, Eigen::RowMajor, 6, 4>(fn, (float *)in, d1, (float *)out, d2);
             else if (n2 == 5)
-                tensor_reduce<float, Eigen::RowMajor, 6, 5>(fn, (float *)in, d1, (float *)out, d2);
+                eigen_reduce<float, Eigen::RowMajor, 6, 5>(fn, (float *)in, d1, (float *)out, d2);
             else
-                tensor_reduce<float, Eigen::RowMajor, 6>(fn, (float *)in, d1, (float *)out);
+                eigen_reduce<float, Eigen::RowMajor, 6>(fn, (float *)in, d1, (float *)out);
             return;
         }
     }
@@ -146,67 +146,67 @@ extern "C" void pg_tensor_reduce(int oid,int fn,char* in,int n1,int* d1,void* ou
     {
         if (n1 == 1)
         {
-            tensor_reduce<double, Eigen::RowMajor, 1>(fn, (double *)in, d1, (double *)out);
+            eigen_reduce<double, Eigen::RowMajor, 1>(fn, (double *)in, d1, (double *)out);
             return;
         }
         else if (n1 == 2)
         {
             if (n2 == 1)
-                tensor_reduce<double, Eigen::RowMajor, 2, 1>(fn, (double *)in, d1, (double *)out, d2);
+                eigen_reduce<double, Eigen::RowMajor, 2, 1>(fn, (double *)in, d1, (double *)out, d2);
             else
-                tensor_reduce<double, Eigen::RowMajor, 2>(fn, (double *)in, d1, (double *)out);
+                eigen_reduce<double, Eigen::RowMajor, 2>(fn, (double *)in, d1, (double *)out);
             return;
         }
         else if (n1 == 3)
         {
             if (n2 == 1)
-                tensor_reduce<double, Eigen::RowMajor, 3, 1>(fn, (double *)in, d1, (double *)out, d2);
+                eigen_reduce<double, Eigen::RowMajor, 3, 1>(fn, (double *)in, d1, (double *)out, d2);
             else if (n2 == 2)
-                tensor_reduce<double, Eigen::RowMajor, 3, 2>(fn, (double *)in, d1, (double *)out, d2);
+                eigen_reduce<double, Eigen::RowMajor, 3, 2>(fn, (double *)in, d1, (double *)out, d2);
             else
-                tensor_reduce<double, Eigen::RowMajor, 3>(fn, (double *)in, d1, (double *)out);
+                eigen_reduce<double, Eigen::RowMajor, 3>(fn, (double *)in, d1, (double *)out);
             return;
         }
         else if (n1 == 4)
         {
             if (n2 == 1)
-                tensor_reduce<double, Eigen::RowMajor, 4, 1>(fn, (double *)in, d1, (double *)out, d2);
+                eigen_reduce<double, Eigen::RowMajor, 4, 1>(fn, (double *)in, d1, (double *)out, d2);
             else if (n2 == 2)
-                tensor_reduce<double, Eigen::RowMajor, 4, 2>(fn, (double *)in, d1, (double *)out, d2);
+                eigen_reduce<double, Eigen::RowMajor, 4, 2>(fn, (double *)in, d1, (double *)out, d2);
             else if (n2 == 3)
-                tensor_reduce<double, Eigen::RowMajor, 4, 3>(fn, (double *)in, d1, (double *)out, d2);
+                eigen_reduce<double, Eigen::RowMajor, 4, 3>(fn, (double *)in, d1, (double *)out, d2);
             else
-                tensor_reduce<double, Eigen::RowMajor, 4>(fn, (double *)in, d1, (double *)out);
+                eigen_reduce<double, Eigen::RowMajor, 4>(fn, (double *)in, d1, (double *)out);
             return;
         }
         else if (n1 == 5)
         {
             if (n2 == 1)
-                tensor_reduce<double, Eigen::RowMajor, 5, 1>(fn, (double *)in, d1, (double *)out, d2);
+                eigen_reduce<double, Eigen::RowMajor, 5, 1>(fn, (double *)in, d1, (double *)out, d2);
             else if (n2 == 2)
-                tensor_reduce<double, Eigen::RowMajor, 5, 2>(fn, (double *)in, d1, (double *)out, d2);
+                eigen_reduce<double, Eigen::RowMajor, 5, 2>(fn, (double *)in, d1, (double *)out, d2);
             else if (n2 == 3)
-                tensor_reduce<double, Eigen::RowMajor, 5, 3>(fn, (double *)in, d1, (double *)out, d2);
+                eigen_reduce<double, Eigen::RowMajor, 5, 3>(fn, (double *)in, d1, (double *)out, d2);
             else if (n2 == 4)
-                tensor_reduce<double, Eigen::RowMajor, 5, 4>(fn, (double *)in, d1, (double *)out, d2);
+                eigen_reduce<double, Eigen::RowMajor, 5, 4>(fn, (double *)in, d1, (double *)out, d2);
             else
-                tensor_reduce<double, Eigen::RowMajor, 5>(fn, (double *)in, d1, (double *)out);
+                eigen_reduce<double, Eigen::RowMajor, 5>(fn, (double *)in, d1, (double *)out);
             return;
         }
         else if (n1 == 6)
         {
             if (n2 == 1)
-                tensor_reduce<double, Eigen::RowMajor, 6, 1>(fn, (double *)in, d1, (double *)out, d2);
+                eigen_reduce<double, Eigen::RowMajor, 6, 1>(fn, (double *)in, d1, (double *)out, d2);
             else if (n2 == 2)
-                tensor_reduce<double, Eigen::RowMajor, 6, 2>(fn, (double *)in, d1, (double *)out, d2);
+                eigen_reduce<double, Eigen::RowMajor, 6, 2>(fn, (double *)in, d1, (double *)out, d2);
             else if (n2 == 3)
-                tensor_reduce<double, Eigen::RowMajor, 6, 3>(fn, (double *)in, d1, (double *)out, d2);
+                eigen_reduce<double, Eigen::RowMajor, 6, 3>(fn, (double *)in, d1, (double *)out, d2);
             else if (n2 == 4)
-                tensor_reduce<double, Eigen::RowMajor, 6, 4>(fn, (double *)in, d1, (double *)out, d2);
+                eigen_reduce<double, Eigen::RowMajor, 6, 4>(fn, (double *)in, d1, (double *)out, d2);
             else if (n2 == 5)
-                tensor_reduce<double, Eigen::RowMajor, 6, 5>(fn, (double *)in, d1, (double *)out, d2);
+                eigen_reduce<double, Eigen::RowMajor, 6, 5>(fn, (double *)in, d1, (double *)out, d2);
             else
-                tensor_reduce<double, Eigen::RowMajor, 6>(fn, (double *)in, d1, (double *)out);
+                eigen_reduce<double, Eigen::RowMajor, 6>(fn, (double *)in, d1, (double *)out);
             return;
         }
     }
@@ -214,67 +214,67 @@ extern "C" void pg_tensor_reduce(int oid,int fn,char* in,int n1,int* d1,void* ou
     {
         if (n1 == 1)
         {
-            tensor_reduce<short, Eigen::RowMajor, 1>(fn, (short *)in, d1, (short *)out);
+            eigen_reduce<short, Eigen::RowMajor, 1>(fn, (short *)in, d1, (short *)out);
             return;
         }
         else if (n1 == 2)
         {
             if (n2 == 1)
-                tensor_reduce<short, Eigen::RowMajor, 2, 1>(fn, (short *)in, d1, (short *)out, d2);
+                eigen_reduce<short, Eigen::RowMajor, 2, 1>(fn, (short *)in, d1, (short *)out, d2);
             else
-                tensor_reduce<short, Eigen::RowMajor, 2>(fn, (short *)in, d1, (short *)out);
+                eigen_reduce<short, Eigen::RowMajor, 2>(fn, (short *)in, d1, (short *)out);
             return;
         }
         else if (n1 == 3)
         {
             if (n2 == 1)
-                tensor_reduce<short, Eigen::RowMajor, 3, 1>(fn, (short *)in, d1, (short *)out, d2);
+                eigen_reduce<short, Eigen::RowMajor, 3, 1>(fn, (short *)in, d1, (short *)out, d2);
             else if (n2 == 2)
-                tensor_reduce<short, Eigen::RowMajor, 3, 2>(fn, (short *)in, d1, (short *)out, d2);
+                eigen_reduce<short, Eigen::RowMajor, 3, 2>(fn, (short *)in, d1, (short *)out, d2);
             else
-                tensor_reduce<short, Eigen::RowMajor, 3>(fn, (short *)in, d1, (short *)out);
+                eigen_reduce<short, Eigen::RowMajor, 3>(fn, (short *)in, d1, (short *)out);
             return;
         }
         else if (n1 == 4)
         {
             if (n2 == 1)
-                tensor_reduce<short, Eigen::RowMajor, 4, 1>(fn, (short *)in, d1, (short *)out, d2);
+                eigen_reduce<short, Eigen::RowMajor, 4, 1>(fn, (short *)in, d1, (short *)out, d2);
             else if (n2 == 2)
-                tensor_reduce<short, Eigen::RowMajor, 4, 2>(fn, (short *)in, d1, (short *)out, d2);
+                eigen_reduce<short, Eigen::RowMajor, 4, 2>(fn, (short *)in, d1, (short *)out, d2);
             else if (n2 == 3)
-                tensor_reduce<short, Eigen::RowMajor, 4, 3>(fn, (short *)in, d1, (short *)out, d2);
+                eigen_reduce<short, Eigen::RowMajor, 4, 3>(fn, (short *)in, d1, (short *)out, d2);
             else
-                tensor_reduce<short, Eigen::RowMajor, 4>(fn, (short *)in, d1, (short *)out);
+                eigen_reduce<short, Eigen::RowMajor, 4>(fn, (short *)in, d1, (short *)out);
             return;
         }
         else if (n1 == 5)
         {
             if (n2 == 1)
-                tensor_reduce<short, Eigen::RowMajor, 5, 1>(fn, (short *)in, d1, (short *)out, d2);
+                eigen_reduce<short, Eigen::RowMajor, 5, 1>(fn, (short *)in, d1, (short *)out, d2);
             else if (n2 == 2)
-                tensor_reduce<short, Eigen::RowMajor, 5, 2>(fn, (short *)in, d1, (short *)out, d2);
+                eigen_reduce<short, Eigen::RowMajor, 5, 2>(fn, (short *)in, d1, (short *)out, d2);
             else if (n2 == 3)
-                tensor_reduce<short, Eigen::RowMajor, 5, 3>(fn, (short *)in, d1, (short *)out, d2);
+                eigen_reduce<short, Eigen::RowMajor, 5, 3>(fn, (short *)in, d1, (short *)out, d2);
             else if (n2 == 4)
-                tensor_reduce<short, Eigen::RowMajor, 5, 4>(fn, (short *)in, d1, (short *)out, d2);
+                eigen_reduce<short, Eigen::RowMajor, 5, 4>(fn, (short *)in, d1, (short *)out, d2);
             else
-                tensor_reduce<short, Eigen::RowMajor, 5>(fn, (short *)in, d1, (short *)out);
+                eigen_reduce<short, Eigen::RowMajor, 5>(fn, (short *)in, d1, (short *)out);
             return;
         }
         else if (n1 == 6)
         {
             if (n2 == 1)
-                tensor_reduce<short, Eigen::RowMajor, 6, 1>(fn, (short *)in, d1, (short *)out, d2);
+                eigen_reduce<short, Eigen::RowMajor, 6, 1>(fn, (short *)in, d1, (short *)out, d2);
             else if (n2 == 2)
-                tensor_reduce<short, Eigen::RowMajor, 6, 2>(fn, (short *)in, d1, (short *)out, d2);
+                eigen_reduce<short, Eigen::RowMajor, 6, 2>(fn, (short *)in, d1, (short *)out, d2);
             else if (n2 == 3)
-                tensor_reduce<short, Eigen::RowMajor, 6, 3>(fn, (short *)in, d1, (short *)out, d2);
+                eigen_reduce<short, Eigen::RowMajor, 6, 3>(fn, (short *)in, d1, (short *)out, d2);
             else if (n2 == 4)
-                tensor_reduce<short, Eigen::RowMajor, 6, 4>(fn, (short *)in, d1, (short *)out, d2);
+                eigen_reduce<short, Eigen::RowMajor, 6, 4>(fn, (short *)in, d1, (short *)out, d2);
             else if (n2 == 5)
-                tensor_reduce<short, Eigen::RowMajor, 6, 5>(fn, (short *)in, d1, (short *)out, d2);
+                eigen_reduce<short, Eigen::RowMajor, 6, 5>(fn, (short *)in, d1, (short *)out, d2);
             else
-                tensor_reduce<short, Eigen::RowMajor, 6>(fn, (short *)in, d1, (short *)out);
+                eigen_reduce<short, Eigen::RowMajor, 6>(fn, (short *)in, d1, (short *)out);
             return;
         }
     }
@@ -282,67 +282,67 @@ extern "C" void pg_tensor_reduce(int oid,int fn,char* in,int n1,int* d1,void* ou
     {
         if (n1 == 1)
         {
-            tensor_reduce<int, Eigen::RowMajor, 1>(fn, (int *)in, d1, (int *)out);
+            eigen_reduce<int, Eigen::RowMajor, 1>(fn, (int *)in, d1, (int *)out);
             return;
         }
         else if (n1 == 2)
         {
             if (n2 == 1)
-                tensor_reduce<int, Eigen::RowMajor, 2, 1>(fn, (int *)in, d1, (int *)out, d2);
+                eigen_reduce<int, Eigen::RowMajor, 2, 1>(fn, (int *)in, d1, (int *)out, d2);
             else
-                tensor_reduce<int, Eigen::RowMajor, 2>(fn, (int *)in, d1, (int *)out);
+                eigen_reduce<int, Eigen::RowMajor, 2>(fn, (int *)in, d1, (int *)out);
             return;
         }
         else if (n1 == 3)
         {
             if (n2 == 1)
-                tensor_reduce<int, Eigen::RowMajor, 3, 1>(fn, (int *)in, d1, (int *)out, d2);
+                eigen_reduce<int, Eigen::RowMajor, 3, 1>(fn, (int *)in, d1, (int *)out, d2);
             else if (n2 == 2)
-                tensor_reduce<int, Eigen::RowMajor, 3, 2>(fn, (int *)in, d1, (int *)out, d2);
+                eigen_reduce<int, Eigen::RowMajor, 3, 2>(fn, (int *)in, d1, (int *)out, d2);
             else
-                tensor_reduce<int, Eigen::RowMajor, 3>(fn, (int *)in, d1, (int *)out);
+                eigen_reduce<int, Eigen::RowMajor, 3>(fn, (int *)in, d1, (int *)out);
             return;
         }
         else if (n1 == 4)
         {
             if (n2 == 1)
-                tensor_reduce<int, Eigen::RowMajor, 4, 1>(fn, (int *)in, d1, (int *)out, d2);
+                eigen_reduce<int, Eigen::RowMajor, 4, 1>(fn, (int *)in, d1, (int *)out, d2);
             else if (n2 == 2)
-                tensor_reduce<int, Eigen::RowMajor, 4, 2>(fn, (int *)in, d1, (int *)out, d2);
+                eigen_reduce<int, Eigen::RowMajor, 4, 2>(fn, (int *)in, d1, (int *)out, d2);
             else if (n2 == 3)
-                tensor_reduce<int, Eigen::RowMajor, 4, 3>(fn, (int *)in, d1, (int *)out, d2);
+                eigen_reduce<int, Eigen::RowMajor, 4, 3>(fn, (int *)in, d1, (int *)out, d2);
             else
-                tensor_reduce<int, Eigen::RowMajor, 4>(fn, (int *)in, d1, (int *)out);
+                eigen_reduce<int, Eigen::RowMajor, 4>(fn, (int *)in, d1, (int *)out);
             return;
         }
         else if (n1 == 5)
         {
             if (n2 == 1)
-                tensor_reduce<int, Eigen::RowMajor, 5, 1>(fn, (int *)in, d1, (int *)out, d2);
+                eigen_reduce<int, Eigen::RowMajor, 5, 1>(fn, (int *)in, d1, (int *)out, d2);
             else if (n2 == 2)
-                tensor_reduce<int, Eigen::RowMajor, 5, 2>(fn, (int *)in, d1, (int *)out, d2);
+                eigen_reduce<int, Eigen::RowMajor, 5, 2>(fn, (int *)in, d1, (int *)out, d2);
             else if (n2 == 3)
-                tensor_reduce<int, Eigen::RowMajor, 5, 3>(fn, (int *)in, d1, (int *)out, d2);
+                eigen_reduce<int, Eigen::RowMajor, 5, 3>(fn, (int *)in, d1, (int *)out, d2);
             else if (n2 == 4)
-                tensor_reduce<int, Eigen::RowMajor, 5, 4>(fn, (int *)in, d1, (int *)out, d2);
+                eigen_reduce<int, Eigen::RowMajor, 5, 4>(fn, (int *)in, d1, (int *)out, d2);
             else
-                tensor_reduce<int, Eigen::RowMajor, 5>(fn, (int *)in, d1, (int *)out);
+                eigen_reduce<int, Eigen::RowMajor, 5>(fn, (int *)in, d1, (int *)out);
             return;
         }
         else if (n1 == 6)
         {
             if (n2 == 1)
-                tensor_reduce<int, Eigen::RowMajor, 6, 1>(fn, (int *)in, d1, (int *)out, d2);
+                eigen_reduce<int, Eigen::RowMajor, 6, 1>(fn, (int *)in, d1, (int *)out, d2);
             else if (n2 == 2)
-                tensor_reduce<int, Eigen::RowMajor, 6, 2>(fn, (int *)in, d1, (int *)out, d2);
+                eigen_reduce<int, Eigen::RowMajor, 6, 2>(fn, (int *)in, d1, (int *)out, d2);
             else if (n2 == 3)
-                tensor_reduce<int, Eigen::RowMajor, 6, 3>(fn, (int *)in, d1, (int *)out, d2);
+                eigen_reduce<int, Eigen::RowMajor, 6, 3>(fn, (int *)in, d1, (int *)out, d2);
             else if (n2 == 4)
-                tensor_reduce<int, Eigen::RowMajor, 6, 4>(fn, (int *)in, d1, (int *)out, d2);
+                eigen_reduce<int, Eigen::RowMajor, 6, 4>(fn, (int *)in, d1, (int *)out, d2);
             else if (n2 == 5)
-                tensor_reduce<int, Eigen::RowMajor, 6, 5>(fn, (int *)in, d1, (int *)out, d2);
+                eigen_reduce<int, Eigen::RowMajor, 6, 5>(fn, (int *)in, d1, (int *)out, d2);
             else
-                tensor_reduce<int, Eigen::RowMajor, 6>(fn, (int *)in, d1, (int *)out);
+                eigen_reduce<int, Eigen::RowMajor, 6>(fn, (int *)in, d1, (int *)out);
             return;
         }
     }
@@ -350,74 +350,74 @@ extern "C" void pg_tensor_reduce(int oid,int fn,char* in,int n1,int* d1,void* ou
     {
         if (n1 == 1)
         {
-            tensor_reduce<long, Eigen::RowMajor, 1>(fn, (long *)in, d1, (long *)out);
+            eigen_reduce<long, Eigen::RowMajor, 1>(fn, (long *)in, d1, (long *)out);
             return;
         }
         else if (n1 == 2)
         {
             if (n2 == 1)
-                tensor_reduce<long, Eigen::RowMajor, 2, 1>(fn, (long *)in, d1, (long *)out, d2);
+                eigen_reduce<long, Eigen::RowMajor, 2, 1>(fn, (long *)in, d1, (long *)out, d2);
             else
-                tensor_reduce<long, Eigen::RowMajor, 2>(fn, (long *)in, d1, (long *)out);
+                eigen_reduce<long, Eigen::RowMajor, 2>(fn, (long *)in, d1, (long *)out);
             return;
         }
         else if (n1 == 3)
         {
             if (n2 == 1)
-                tensor_reduce<long, Eigen::RowMajor, 3, 1>(fn, (long *)in, d1, (long *)out, d2);
+                eigen_reduce<long, Eigen::RowMajor, 3, 1>(fn, (long *)in, d1, (long *)out, d2);
             else if (n2 == 2)
-                tensor_reduce<long, Eigen::RowMajor, 3, 2>(fn, (long *)in, d1, (long *)out, d2);
+                eigen_reduce<long, Eigen::RowMajor, 3, 2>(fn, (long *)in, d1, (long *)out, d2);
             else
-                tensor_reduce<long, Eigen::RowMajor, 3>(fn, (long *)in, d1, (long *)out);
+                eigen_reduce<long, Eigen::RowMajor, 3>(fn, (long *)in, d1, (long *)out);
             return;
         }
         else if (n1 == 4)
         {
             if (n2 == 1)
-                tensor_reduce<long, Eigen::RowMajor, 4, 1>(fn, (long *)in, d1, (long *)out, d2);
+                eigen_reduce<long, Eigen::RowMajor, 4, 1>(fn, (long *)in, d1, (long *)out, d2);
             else if (n2 == 2)
-                tensor_reduce<long, Eigen::RowMajor, 4, 2>(fn, (long *)in, d1, (long *)out, d2);
+                eigen_reduce<long, Eigen::RowMajor, 4, 2>(fn, (long *)in, d1, (long *)out, d2);
             else if (n2 == 3)
-                tensor_reduce<long, Eigen::RowMajor, 4, 3>(fn, (long *)in, d1, (long *)out, d2);
+                eigen_reduce<long, Eigen::RowMajor, 4, 3>(fn, (long *)in, d1, (long *)out, d2);
             else
-                tensor_reduce<long, Eigen::RowMajor, 4>(fn, (long *)in, d1, (long *)out);
+                eigen_reduce<long, Eigen::RowMajor, 4>(fn, (long *)in, d1, (long *)out);
             return;
         }
         else if (n1 == 5)
         {
             if (n2 == 1)
-                tensor_reduce<long, Eigen::RowMajor, 5, 1>(fn, (long *)in, d1, (long *)out, d2);
+                eigen_reduce<long, Eigen::RowMajor, 5, 1>(fn, (long *)in, d1, (long *)out, d2);
             else if (n2 == 2)
-                tensor_reduce<long, Eigen::RowMajor, 5, 2>(fn, (long *)in, d1, (long *)out, d2);
+                eigen_reduce<long, Eigen::RowMajor, 5, 2>(fn, (long *)in, d1, (long *)out, d2);
             else if (n2 == 3)
-                tensor_reduce<long, Eigen::RowMajor, 5, 3>(fn, (long *)in, d1, (long *)out, d2);
+                eigen_reduce<long, Eigen::RowMajor, 5, 3>(fn, (long *)in, d1, (long *)out, d2);
             else if (n2 == 4)
-                tensor_reduce<long, Eigen::RowMajor, 5, 4>(fn, (long *)in, d1, (long *)out, d2);
+                eigen_reduce<long, Eigen::RowMajor, 5, 4>(fn, (long *)in, d1, (long *)out, d2);
             else
-                tensor_reduce<long, Eigen::RowMajor, 5>(fn, (long *)in, d1, (long *)out);
+                eigen_reduce<long, Eigen::RowMajor, 5>(fn, (long *)in, d1, (long *)out);
             return;
         }
         else if (n1 == 6)
         {
             if (n2 == 1)
-                tensor_reduce<long, Eigen::RowMajor, 6, 1>(fn, (long *)in, d1, (long *)out, d2);
+                eigen_reduce<long, Eigen::RowMajor, 6, 1>(fn, (long *)in, d1, (long *)out, d2);
             else if (n2 == 2)
-                tensor_reduce<long, Eigen::RowMajor, 6, 2>(fn, (long *)in, d1, (long *)out, d2);
+                eigen_reduce<long, Eigen::RowMajor, 6, 2>(fn, (long *)in, d1, (long *)out, d2);
             else if (n2 == 3)
-                tensor_reduce<long, Eigen::RowMajor, 6, 3>(fn, (long *)in, d1, (long *)out, d2);
+                eigen_reduce<long, Eigen::RowMajor, 6, 3>(fn, (long *)in, d1, (long *)out, d2);
             else if (n2 == 4)
-                tensor_reduce<long, Eigen::RowMajor, 6, 4>(fn, (long *)in, d1, (long *)out, d2);
+                eigen_reduce<long, Eigen::RowMajor, 6, 4>(fn, (long *)in, d1, (long *)out, d2);
             else if (n2 == 5)
-                tensor_reduce<long, Eigen::RowMajor, 6, 5>(fn, (long *)in, d1, (long *)out, d2);
+                eigen_reduce<long, Eigen::RowMajor, 6, 5>(fn, (long *)in, d1, (long *)out, d2);
             else
-                tensor_reduce<long, Eigen::RowMajor, 6>(fn, (long *)in, d1, (long *)out);
+                eigen_reduce<long, Eigen::RowMajor, 6>(fn, (long *)in, d1, (long *)out);
             return;
         }
     }
 }
 
 template<typename T,int L,int M,int R,int D>
-void tensor_rfft(T* in,int* d1,T* out,int* d2)
+void eigen_rfft(T* in,int* d1,T* out,int* d2)
 {
     Eigen::array<int, M> m;
     for (int i=0;i < M;i++) m[i] = d1[i];
@@ -433,7 +433,7 @@ void tensor_rfft(T* in,int* d1,T* out,int* d2)
 }
 
 template<typename T,int L,int M,int R,int D>
-void tensor_fft(std::complex<T>* in,int* d1,T* out,int* d2)
+void eigen_fft(std::complex<T>* in,int* d1,T* out,int* d2)
 {
     Eigen::array<int, M> m;
     for (int i=0;i < M;i++) m[i] = d1[i];
@@ -448,7 +448,7 @@ void tensor_fft(std::complex<T>* in,int* d1,T* out,int* d2)
     }
 }
 
-extern "C" void pg_tensor_fft(int oid,bool forward,char* in,int n1,int* d1,void* out,int n2,int* d2)
+extern "C" void pg_eigen_fft(int oid,bool forward,char* in,int n1,int* d1,void* out,int n2,int* d2)
 {
     if (forward)
     {
@@ -457,28 +457,28 @@ extern "C" void pg_tensor_fft(int oid,bool forward,char* in,int n1,int* d1,void*
             if (oid == 700)
             {
                 if (n1 == 1)
-                    tensor_rfft<float, Eigen::RowMajor, 1, Eigen::BothParts, Eigen::FFT_FORWARD>((float *)in, d1, (float *)out, d2);
+                    eigen_rfft<float, Eigen::RowMajor, 1, Eigen::BothParts, Eigen::FFT_FORWARD>((float *)in, d1, (float *)out, d2);
                 else if (n1 == 2)
-                    tensor_rfft<float, Eigen::RowMajor, 2, Eigen::BothParts, Eigen::FFT_FORWARD>((float *)in, d1, (float *)out, d2);
+                    eigen_rfft<float, Eigen::RowMajor, 2, Eigen::BothParts, Eigen::FFT_FORWARD>((float *)in, d1, (float *)out, d2);
                 else if (n1 == 3)
-                    tensor_rfft<float, Eigen::RowMajor, 3, Eigen::BothParts, Eigen::FFT_FORWARD>((float *)in, d1, (float *)out, d2);
+                    eigen_rfft<float, Eigen::RowMajor, 3, Eigen::BothParts, Eigen::FFT_FORWARD>((float *)in, d1, (float *)out, d2);
                 else if (n1 == 4)
-                    tensor_rfft<float, Eigen::RowMajor, 4, Eigen::BothParts, Eigen::FFT_FORWARD>((float *)in, d1, (float *)out, d2);
+                    eigen_rfft<float, Eigen::RowMajor, 4, Eigen::BothParts, Eigen::FFT_FORWARD>((float *)in, d1, (float *)out, d2);
                 else if (n1 == 5)
-                    tensor_rfft<float, Eigen::RowMajor, 5, Eigen::BothParts, Eigen::FFT_FORWARD>((float *)in, d1, (float *)out, d2);
+                    eigen_rfft<float, Eigen::RowMajor, 5, Eigen::BothParts, Eigen::FFT_FORWARD>((float *)in, d1, (float *)out, d2);
             }
             else if (oid == 701)
             {
                 if (n1 == 1)
-                    tensor_rfft<double, Eigen::RowMajor, 1, Eigen::BothParts, Eigen::FFT_FORWARD>((double *)in, d1, (double *)out, d2);
+                    eigen_rfft<double, Eigen::RowMajor, 1, Eigen::BothParts, Eigen::FFT_FORWARD>((double *)in, d1, (double *)out, d2);
                 else if (n1 == 2)
-                    tensor_rfft<double, Eigen::RowMajor, 2, Eigen::BothParts, Eigen::FFT_FORWARD>((double *)in, d1, (double *)out, d2);
+                    eigen_rfft<double, Eigen::RowMajor, 2, Eigen::BothParts, Eigen::FFT_FORWARD>((double *)in, d1, (double *)out, d2);
                 else if (n1 == 3)
-                    tensor_rfft<double, Eigen::RowMajor, 3, Eigen::BothParts, Eigen::FFT_FORWARD>((double *)in, d1, (double *)out, d2);
+                    eigen_rfft<double, Eigen::RowMajor, 3, Eigen::BothParts, Eigen::FFT_FORWARD>((double *)in, d1, (double *)out, d2);
                 else if (n1 == 4)
-                    tensor_rfft<double, Eigen::RowMajor, 4, Eigen::BothParts, Eigen::FFT_FORWARD>((double *)in, d1, (double *)out, d2);
+                    eigen_rfft<double, Eigen::RowMajor, 4, Eigen::BothParts, Eigen::FFT_FORWARD>((double *)in, d1, (double *)out, d2);
                 else if (n1 == 5)
-                    tensor_rfft<double, Eigen::RowMajor, 5, Eigen::BothParts, Eigen::FFT_FORWARD>((double *)in, d1, (double *)out, d2);
+                    eigen_rfft<double, Eigen::RowMajor, 5, Eigen::BothParts, Eigen::FFT_FORWARD>((double *)in, d1, (double *)out, d2);
             }
         }
         else if (n1 == n2 + 1)
@@ -486,28 +486,28 @@ extern "C" void pg_tensor_fft(int oid,bool forward,char* in,int n1,int* d1,void*
             if (oid == 700)
             {
                 if (n1 == 2)
-                    tensor_fft<float, Eigen::RowMajor, 1, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<float> *)in, d1, (float *)out, d2);
+                    eigen_fft<float, Eigen::RowMajor, 1, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<float> *)in, d1, (float *)out, d2);
                 else if (n1 == 3)
-                    tensor_fft<float, Eigen::RowMajor, 2, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<float> *)in, d1, (float *)out, d2);
+                    eigen_fft<float, Eigen::RowMajor, 2, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<float> *)in, d1, (float *)out, d2);
                 else if (n1 == 4)
-                    tensor_fft<float, Eigen::RowMajor, 3, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<float> *)in, d1, (float *)out, d2);
+                    eigen_fft<float, Eigen::RowMajor, 3, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<float> *)in, d1, (float *)out, d2);
                 else if (n1 == 5)
-                    tensor_fft<float, Eigen::RowMajor, 4, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<float> *)in, d1, (float *)out, d2);
+                    eigen_fft<float, Eigen::RowMajor, 4, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<float> *)in, d1, (float *)out, d2);
                 else if (n1 == 6)
-                    tensor_fft<float, Eigen::RowMajor, 5, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<float> *)in, d1, (float *)out, d2);
+                    eigen_fft<float, Eigen::RowMajor, 5, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<float> *)in, d1, (float *)out, d2);
             }
             else if (oid == 701)
             {
                 if (n1 == 2)
-                    tensor_fft<double, Eigen::RowMajor, 1, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<double> *)in, d1, (double *)out, d2);
+                    eigen_fft<double, Eigen::RowMajor, 1, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<double> *)in, d1, (double *)out, d2);
                 else if (n1 == 3)
-                    tensor_fft<double, Eigen::RowMajor, 2, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<double> *)in, d1, (double *)out, d2);
+                    eigen_fft<double, Eigen::RowMajor, 2, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<double> *)in, d1, (double *)out, d2);
                 else if (n1 == 4)
-                    tensor_fft<double, Eigen::RowMajor, 3, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<double> *)in, d1, (double *)out, d2);
+                    eigen_fft<double, Eigen::RowMajor, 3, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<double> *)in, d1, (double *)out, d2);
                 else if (n1 == 5)
-                    tensor_fft<double, Eigen::RowMajor, 4, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<double> *)in, d1, (double *)out, d2);
+                    eigen_fft<double, Eigen::RowMajor, 4, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<double> *)in, d1, (double *)out, d2);
                 else if (n1 == 6)
-                    tensor_fft<double, Eigen::RowMajor, 5, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<double> *)in, d1, (double *)out, d2);
+                    eigen_fft<double, Eigen::RowMajor, 5, Eigen::BothParts, Eigen::FFT_FORWARD>((std::complex<double> *)in, d1, (double *)out, d2);
             }
         }
     }
@@ -518,28 +518,28 @@ extern "C" void pg_tensor_fft(int oid,bool forward,char* in,int n1,int* d1,void*
             if (oid == 700)
             {
                 if (n1 == 1)
-                    tensor_rfft<float, Eigen::RowMajor, 1, Eigen::BothParts, Eigen::FFT_REVERSE>((float *)in, d1, (float *)out, d2);
+                    eigen_rfft<float, Eigen::RowMajor, 1, Eigen::BothParts, Eigen::FFT_REVERSE>((float *)in, d1, (float *)out, d2);
                 else if (n1 == 2)
-                    tensor_rfft<float, Eigen::RowMajor, 2, Eigen::BothParts, Eigen::FFT_REVERSE>((float *)in, d1, (float *)out, d2);
+                    eigen_rfft<float, Eigen::RowMajor, 2, Eigen::BothParts, Eigen::FFT_REVERSE>((float *)in, d1, (float *)out, d2);
                 else if (n1 == 3)
-                    tensor_rfft<float, Eigen::RowMajor, 3, Eigen::BothParts, Eigen::FFT_REVERSE>((float *)in, d1, (float *)out, d2);
+                    eigen_rfft<float, Eigen::RowMajor, 3, Eigen::BothParts, Eigen::FFT_REVERSE>((float *)in, d1, (float *)out, d2);
                 else if (n1 == 4)
-                    tensor_rfft<float, Eigen::RowMajor, 4, Eigen::BothParts, Eigen::FFT_REVERSE>((float *)in, d1, (float *)out, d2);
+                    eigen_rfft<float, Eigen::RowMajor, 4, Eigen::BothParts, Eigen::FFT_REVERSE>((float *)in, d1, (float *)out, d2);
                 else if (n1 == 5)
-                    tensor_rfft<float, Eigen::RowMajor, 5, Eigen::BothParts, Eigen::FFT_REVERSE>((float *)in, d1, (float *)out, d2);
+                    eigen_rfft<float, Eigen::RowMajor, 5, Eigen::BothParts, Eigen::FFT_REVERSE>((float *)in, d1, (float *)out, d2);
             }
             else if (oid == 701)
             {
                 if (n1 == 1)
-                    tensor_rfft<double, Eigen::RowMajor, 1, Eigen::BothParts, Eigen::FFT_REVERSE>((double *)in, d1, (double *)out, d2);
+                    eigen_rfft<double, Eigen::RowMajor, 1, Eigen::BothParts, Eigen::FFT_REVERSE>((double *)in, d1, (double *)out, d2);
                 else if (n1 == 2)
-                    tensor_rfft<double, Eigen::RowMajor, 2, Eigen::BothParts, Eigen::FFT_REVERSE>((double *)in, d1, (double *)out, d2);
+                    eigen_rfft<double, Eigen::RowMajor, 2, Eigen::BothParts, Eigen::FFT_REVERSE>((double *)in, d1, (double *)out, d2);
                 else if (n1 == 3)
-                    tensor_rfft<double, Eigen::RowMajor, 3, Eigen::BothParts, Eigen::FFT_REVERSE>((double *)in, d1, (double *)out, d2);
+                    eigen_rfft<double, Eigen::RowMajor, 3, Eigen::BothParts, Eigen::FFT_REVERSE>((double *)in, d1, (double *)out, d2);
                 else if (n1 == 4)
-                    tensor_rfft<double, Eigen::RowMajor, 4, Eigen::BothParts, Eigen::FFT_REVERSE>((double *)in, d1, (double *)out, d2);
+                    eigen_rfft<double, Eigen::RowMajor, 4, Eigen::BothParts, Eigen::FFT_REVERSE>((double *)in, d1, (double *)out, d2);
                 else if (n1 == 5)
-                    tensor_rfft<double, Eigen::RowMajor, 5, Eigen::BothParts, Eigen::FFT_REVERSE>((double *)in, d1, (double *)out, d2);
+                    eigen_rfft<double, Eigen::RowMajor, 5, Eigen::BothParts, Eigen::FFT_REVERSE>((double *)in, d1, (double *)out, d2);
             }
         }
         else if (n1 == n2 + 1)
@@ -547,34 +547,34 @@ extern "C" void pg_tensor_fft(int oid,bool forward,char* in,int n1,int* d1,void*
             if (oid == 700)
             {
                 if (n1 == 2)
-                    tensor_fft<float, Eigen::RowMajor, 1, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<float> *)in, d1, (float *)out, d2);
+                    eigen_fft<float, Eigen::RowMajor, 1, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<float> *)in, d1, (float *)out, d2);
                 else if (n1 == 3)
-                    tensor_fft<float, Eigen::RowMajor, 2, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<float> *)in, d1, (float *)out, d2);
+                    eigen_fft<float, Eigen::RowMajor, 2, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<float> *)in, d1, (float *)out, d2);
                 else if (n1 == 4)
-                    tensor_fft<float, Eigen::RowMajor, 3, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<float> *)in, d1, (float *)out, d2);
+                    eigen_fft<float, Eigen::RowMajor, 3, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<float> *)in, d1, (float *)out, d2);
                 else if (n1 == 5)
-                    tensor_fft<float, Eigen::RowMajor, 4, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<float> *)in, d1, (float *)out, d2);
+                    eigen_fft<float, Eigen::RowMajor, 4, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<float> *)in, d1, (float *)out, d2);
                 else if (n1 == 6)
-                    tensor_fft<float, Eigen::RowMajor, 5, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<float> *)in, d1, (float *)out, d2);
+                    eigen_fft<float, Eigen::RowMajor, 5, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<float> *)in, d1, (float *)out, d2);
             }
             else if (oid == 701)
             {
                 if (n1 == 2)
-                    tensor_fft<double, Eigen::RowMajor, 1, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<double> *)in, d1, (double *)out, d2);
+                    eigen_fft<double, Eigen::RowMajor, 1, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<double> *)in, d1, (double *)out, d2);
                 else if (n1 == 3)
-                    tensor_fft<double, Eigen::RowMajor, 2, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<double> *)in, d1, (double *)out, d2);
+                    eigen_fft<double, Eigen::RowMajor, 2, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<double> *)in, d1, (double *)out, d2);
                 else if (n1 == 4)
-                    tensor_fft<double, Eigen::RowMajor, 3, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<double> *)in, d1, (double *)out, d2);
+                    eigen_fft<double, Eigen::RowMajor, 3, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<double> *)in, d1, (double *)out, d2);
                 else if (n1 == 5)
-                    tensor_fft<double, Eigen::RowMajor, 4, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<double> *)in, d1, (double *)out, d2);
+                    eigen_fft<double, Eigen::RowMajor, 4, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<double> *)in, d1, (double *)out, d2);
                 else if (n1 == 6)
-                    tensor_fft<double, Eigen::RowMajor, 5, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<double> *)in, d1, (double *)out, d2);
+                    eigen_fft<double, Eigen::RowMajor, 5, Eigen::BothParts, Eigen::FFT_REVERSE>((std::complex<double> *)in, d1, (double *)out, d2);
             }
         }
     }
 }
 
-extern "C" void pg_tensor_random(int fn,int c1,double* out,double a1,double b1,int s1)
+extern "C" void pg_eigen_random(int fn,int c1,double* out,double a1,double b1,int s1)
 {
     unsigned int seed;
     if (s1 < 0)
@@ -616,7 +616,7 @@ extern "C" void pg_tensor_random(int fn,int c1,double* out,double a1,double b1,i
     }
 }
 
-extern "C" void pg_tensor_shuffle(int oid,int s1, int c1,void* out)
+extern "C" void pg_eigen_shuffle(int oid,int s1, int c1,void* out)
 {
     std::default_random_engine r{std::random_device{}()};
     if (oid == 700)
@@ -662,7 +662,7 @@ extern "C" void pg_tensor_shuffle(int oid,int s1, int c1,void* out)
 }
 
 template<typename T,int L>
-void tensor_binaryop(int fn,int m,T* a,T* b)
+void eigen_binaryop(int fn,int m,T* a,T* b)
 {
     Eigen::Tensor<T, 1, L> n;
     Eigen::TensorMap<Eigen::Tensor<T, 1, L>> x(a, m);
@@ -706,22 +706,22 @@ void tensor_binaryop(int fn,int m,T* a,T* b)
         std::copy(n.data(), n.data() + n.size(), a);
 }
 
-extern "C" void pg_tensor_binaryop(int oid,int fn,int c1,void* a1,void* a2)
+extern "C" void pg_eigen_binaryop(int oid,int fn,int c1,void* a1,void* a2)
 {
     if (oid == 700)
-        tensor_binaryop<float, Eigen::RowMajor>(fn, c1, (float*) a1, (float*) a2);
+        eigen_binaryop<float, Eigen::RowMajor>(fn, c1, (float*) a1, (float*) a2);
     else if (oid == 701)
-        tensor_binaryop<double, Eigen::RowMajor>(fn, c1, (double*) a1, (double*) a2);
+        eigen_binaryop<double, Eigen::RowMajor>(fn, c1, (double*) a1, (double*) a2);
     else if (oid ==  21)
-        tensor_binaryop<short, Eigen::RowMajor>(fn, c1, (short*) a1, (short*) a2);
+        eigen_binaryop<short, Eigen::RowMajor>(fn, c1, (short*) a1, (short*) a2);
     else if (oid ==  23)
-        tensor_binaryop<int, Eigen::RowMajor>(fn, c1, (int*) a1, (int*) a2);
+        eigen_binaryop<int, Eigen::RowMajor>(fn, c1, (int*) a1, (int*) a2);
     else if (oid ==  20)
-        tensor_binaryop<long, Eigen::RowMajor>(fn, c1, (long*) a1, (long*) a2);
+        eigen_binaryop<long, Eigen::RowMajor>(fn, c1, (long*) a1, (long*) a2);
 }
 
 template<typename T,int L>
-void tensor_unaryop(int fn,int m,T* a)
+void eigen_unaryop(int fn,int m,T* a)
 {
     Eigen::TensorMap<Eigen::Tensor<T, 1, L>> x(a, m);
     switch (fn)
@@ -749,22 +749,22 @@ void tensor_unaryop(int fn,int m,T* a)
     }
 }
 
-extern "C" void pg_tensor_unaryop(int oid,int fn,int c1,void* a1)
+extern "C" void pg_eigen_unaryop(int oid,int fn,int c1,void* a1)
 {
     if (oid == 700)
-        tensor_unaryop<float, Eigen::RowMajor>(fn, c1, (float*) a1);
+        eigen_unaryop<float, Eigen::RowMajor>(fn, c1, (float*) a1);
     else if (oid == 701)
-        tensor_unaryop<double, Eigen::RowMajor>(fn, c1, (double*) a1);
+        eigen_unaryop<double, Eigen::RowMajor>(fn, c1, (double*) a1);
     else if (oid ==  21)
-        tensor_unaryop<short, Eigen::RowMajor>(fn, c1, (short*) a1);
+        eigen_unaryop<short, Eigen::RowMajor>(fn, c1, (short*) a1);
     else if (oid ==  23)
-        tensor_unaryop<int, Eigen::RowMajor>(fn, c1, (int*) a1);
+        eigen_unaryop<int, Eigen::RowMajor>(fn, c1, (int*) a1);
     else if (oid ==  20)
-        tensor_unaryop<long, Eigen::RowMajor>(fn, c1, (long*) a1);
+        eigen_unaryop<long, Eigen::RowMajor>(fn, c1, (long*) a1);
 }
 
 template<typename T,int L,int M>
-void tensor_convolve(T* i1,int* d1,T* k2,int* d2,int* s3,int* p4,T* o5,int* d5)
+void eigen_convolve(T* i1,int* d1,T* k2,int* d2,int* s3,int* p4,T* o5,int* d5)
 {
     Eigen::array<int, M> m;
     for (int i=0;i < M;i++) m[i] = d1[i];
@@ -812,30 +812,30 @@ void tensor_convolve(T* i1,int* d1,T* k2,int* d2,int* s3,int* p4,T* o5,int* d5)
     std::copy(fo.data(), fo.data() + fo.size(), o5);
 }
 
-extern "C" void pg_tensor_convolve(int oid,void* i1,int n1,int* d1,void* k2,int* d2,int* s3,int* p4,void* o5,int* d5)
+extern "C" void pg_eigen_convolve(int oid,void* i1,int n1,int* d1,void* k2,int* d2,int* s3,int* p4,void* o5,int* d5)
 {
     if (oid == 700)
     {
         if (n1 == 3)
-            tensor_convolve<float, Eigen::RowMajor, 3>((float*) i1, d1, (float*) k2, d2, s3, p4, (float*) o5, d5);
+            eigen_convolve<float, Eigen::RowMajor, 3>((float*) i1, d1, (float*) k2, d2, s3, p4, (float*) o5, d5);
         else if (n1 == 4)
-            tensor_convolve<float, Eigen::RowMajor, 4>((float*) i1, d1, (float*) k2, d2, s3, p4, (float*) o5, d5);
+            eigen_convolve<float, Eigen::RowMajor, 4>((float*) i1, d1, (float*) k2, d2, s3, p4, (float*) o5, d5);
         else if (n1 == 5)
-            tensor_convolve<float, Eigen::RowMajor, 5>((float*) i1, d1, (float*) k2, d2, s3, p4, (float*) o5, d5);
+            eigen_convolve<float, Eigen::RowMajor, 5>((float*) i1, d1, (float*) k2, d2, s3, p4, (float*) o5, d5);
     }
     else if (oid == 701)
     {
         if (n1 == 3)
-            tensor_convolve<double, Eigen::RowMajor, 3>((double*) i1, d1, (double*) k2, d2, s3, p4, (double*) o5, d5);
+            eigen_convolve<double, Eigen::RowMajor, 3>((double*) i1, d1, (double*) k2, d2, s3, p4, (double*) o5, d5);
         else if (n1 == 4)
-            tensor_convolve<double, Eigen::RowMajor, 4>((double*) i1, d1, (double*) k2, d2, s3, p4, (double*) o5, d5);
+            eigen_convolve<double, Eigen::RowMajor, 4>((double*) i1, d1, (double*) k2, d2, s3, p4, (double*) o5, d5);
         else if (n1 == 5)
-            tensor_convolve<double, Eigen::RowMajor, 5>((double*) i1, d1, (double*) k2, d2, s3, p4, (double*) o5, d5);
+            eigen_convolve<double, Eigen::RowMajor, 5>((double*) i1, d1, (double*) k2, d2, s3, p4, (double*) o5, d5);
     }
 }
 
 template<typename T,int L,int M>
-void tensor_pool(int fn,T* i1,int* d1,int* k2,int* s3,int* p4,T* o5,int* d5)
+void eigen_pool(int fn,T* i1,int* d1,int* k2,int* s3,int* p4,T* o5,int* d5)
 {
     Eigen::array<int, M> m;
     for (int i=0;i < M;i++) m[i] = d1[i];
@@ -881,30 +881,30 @@ void tensor_pool(int fn,T* i1,int* d1,int* k2,int* s3,int* p4,T* o5,int* d5)
     std::copy(fo.data(), fo.data() + fo.size(), o5);
 }
 
-extern "C" void pg_tensor_pool(int oid,int fn,void* i1,int n1,int* d1,int* k2,int* s3,int* p4,void* o5,int* d5)
+extern "C" void pg_eigen_pool(int oid,int fn,void* i1,int n1,int* d1,int* k2,int* s3,int* p4,void* o5,int* d5)
 {
     if (oid == 700)
     {
         if (n1 == 3)
-            tensor_pool<float, Eigen::RowMajor, 3>(fn, (float*) i1, d1, k2, s3, p4, (float*) o5, d5);
+            eigen_pool<float, Eigen::RowMajor, 3>(fn, (float*) i1, d1, k2, s3, p4, (float*) o5, d5);
         else if (n1 == 4)
-            tensor_pool<float, Eigen::RowMajor, 4>(fn, (float*) i1, d1, k2, s3, p4, (float*) o5, d5);
+            eigen_pool<float, Eigen::RowMajor, 4>(fn, (float*) i1, d1, k2, s3, p4, (float*) o5, d5);
         else if (n1 == 5)
-            tensor_pool<float, Eigen::RowMajor, 5>(fn, (float*) i1, d1, k2, s3, p4, (float*) o5, d5);
+            eigen_pool<float, Eigen::RowMajor, 5>(fn, (float*) i1, d1, k2, s3, p4, (float*) o5, d5);
     }
     else if (oid == 701)
     {
         if (n1 == 3)
-            tensor_pool<double, Eigen::RowMajor, 3>(fn, (double*) i1, d1, k2, s3, p4, (double*) o5, d5);
+            eigen_pool<double, Eigen::RowMajor, 3>(fn, (double*) i1, d1, k2, s3, p4, (double*) o5, d5);
         else if (n1 == 4)
-            tensor_pool<double, Eigen::RowMajor, 4>(fn, (double*) i1, d1, k2, s3, p4, (double*) o5, d5);
+            eigen_pool<double, Eigen::RowMajor, 4>(fn, (double*) i1, d1, k2, s3, p4, (double*) o5, d5);
         else if (n1 == 5)
-            tensor_pool<double, Eigen::RowMajor, 5>(fn, (double*) i1, d1, k2, s3, p4, (double*) o5, d5);
+            eigen_pool<double, Eigen::RowMajor, 5>(fn, (double*) i1, d1, k2, s3, p4, (double*) o5, d5);
     }
 }
 
 template<typename T,int L>
-void tensor_activate(int fn,int m,T* a,T g)
+void eigen_activate(int fn,int m,T* a,T g)
 {
     Eigen::TensorMap<Eigen::Tensor<T, 1, L>> x(a, m);
     switch (fn)
@@ -929,16 +929,16 @@ void tensor_activate(int fn,int m,T* a,T g)
     }
 }
 
-extern "C" void pg_tensor_activate(int oid,int fn,int c1,void* a1,float g)
+extern "C" void pg_eigen_activate(int oid,int fn,int c1,void* a1,float g)
 {
     if (oid == 700)
-        tensor_activate<float, Eigen::RowMajor>(fn, c1, (float*) a1, g);
+        eigen_activate<float, Eigen::RowMajor>(fn, c1, (float*) a1, g);
     else if (oid == 701)
-        tensor_activate<double, Eigen::RowMajor>(fn, c1, (double*) a1, (double) g);
+        eigen_activate<double, Eigen::RowMajor>(fn, c1, (double*) a1, (double) g);
 }
 
 template<typename T,int L,int M>
-void tensor_dropout(T* i1,int* d1,T r2,int* n2,int s2)
+void eigen_dropout(T* i1,int* d1,T r2,int* n2,int s2)
 {
     Eigen::array<int, M> m;
     for (int i=0;i < M;i++) m[i] = d1[i];
@@ -968,42 +968,42 @@ void tensor_dropout(T* i1,int* d1,T r2,int* n2,int s2)
     in = in / in.constant(1 - r2) * km.broadcast(bc);
 }
 
-extern "C" void pg_tensor_dropout(int oid,void* i1,int n1,int* d1,float r2,int* n2,int s2)
+extern "C" void pg_eigen_dropout(int oid,void* i1,int n1,int* d1,float r2,int* n2,int s2)
 {
     if (oid == 700)
     {
         if (n1 == 1)
-            tensor_dropout<float, Eigen::RowMajor, 1>((float*) i1, d1, r2, n2, s2);
+            eigen_dropout<float, Eigen::RowMajor, 1>((float*) i1, d1, r2, n2, s2);
         else if (n1 == 2)
-            tensor_dropout<float, Eigen::RowMajor, 2>((float*) i1, d1, r2, n2, s2);
+            eigen_dropout<float, Eigen::RowMajor, 2>((float*) i1, d1, r2, n2, s2);
         else if (n1 == 3)
-            tensor_dropout<float, Eigen::RowMajor, 3>((float*) i1, d1, r2, n2, s2);
+            eigen_dropout<float, Eigen::RowMajor, 3>((float*) i1, d1, r2, n2, s2);
         else if (n1 == 4)
-            tensor_dropout<float, Eigen::RowMajor, 4>((float*) i1, d1, r2, n2, s2);
+            eigen_dropout<float, Eigen::RowMajor, 4>((float*) i1, d1, r2, n2, s2);
         else if (n1 == 5)
-            tensor_dropout<float, Eigen::RowMajor, 5>((float*) i1, d1, r2, n2, s2);
+            eigen_dropout<float, Eigen::RowMajor, 5>((float*) i1, d1, r2, n2, s2);
         else if (n1 == 6)
-            tensor_dropout<float, Eigen::RowMajor, 6>((float*) i1, d1, r2, n2, s2);
+            eigen_dropout<float, Eigen::RowMajor, 6>((float*) i1, d1, r2, n2, s2);
     }
     else if (oid == 701)
     {
         if (n1 == 1)
-            tensor_dropout<double, Eigen::RowMajor, 1>((double*) i1, d1, (double) r2, n2, s2);
+            eigen_dropout<double, Eigen::RowMajor, 1>((double*) i1, d1, (double) r2, n2, s2);
         else if (n1 == 2)
-            tensor_dropout<double, Eigen::RowMajor, 2>((double*) i1, d1, (double) r2, n2, s2);
+            eigen_dropout<double, Eigen::RowMajor, 2>((double*) i1, d1, (double) r2, n2, s2);
         else if (n1 == 3)
-            tensor_dropout<double, Eigen::RowMajor, 3>((double*) i1, d1, (double) r2, n2, s2);
+            eigen_dropout<double, Eigen::RowMajor, 3>((double*) i1, d1, (double) r2, n2, s2);
         else if (n1 == 4)
-            tensor_dropout<double, Eigen::RowMajor, 4>((double*) i1, d1, (double) r2, n2, s2);
+            eigen_dropout<double, Eigen::RowMajor, 4>((double*) i1, d1, (double) r2, n2, s2);
         else if (n1 == 5)
-            tensor_dropout<double, Eigen::RowMajor, 5>((double*) i1, d1, (double) r2, n2, s2);
+            eigen_dropout<double, Eigen::RowMajor, 5>((double*) i1, d1, (double) r2, n2, s2);
         else if (n1 == 6)
-            tensor_dropout<double, Eigen::RowMajor, 6>((double*) i1, d1, (double) r2, n2, s2);
+            eigen_dropout<double, Eigen::RowMajor, 6>((double*) i1, d1, (double) r2, n2, s2);
     }
 }
 
 template<typename T,int L>
-void tensor_rmatmul(int n1,T* i1,int* d1,T* i2,int* d2,bool* b2,T* o3,int* d3)
+void eigen_rmatmul(int n1,T* i1,int* d1,T* i2,int* d2,bool* b2,T* o3,int* d3)
 {
     int x1 = 1;
     for (int i=0;i < n1-2;i++) x1 *= d1[i];
@@ -1025,7 +1025,7 @@ void tensor_rmatmul(int n1,T* i1,int* d1,T* i2,int* d2,bool* b2,T* o3,int* d3)
 }
 
 template<typename T,int L>
-void tensor_cmatmul(int n1,std::complex<T>* i1,int* d1,std::complex<T>* i2,int* d2,bool* b2,std::complex<T>* o3,int* d3)
+void eigen_cmatmul(int n1,std::complex<T>* i1,int* d1,std::complex<T>* i2,int* d2,bool* b2,std::complex<T>* o3,int* d3)
 {
     int x1 = 1;
     for (int i=0;i < n1-3;i++) x1 *= d1[i];
@@ -1052,47 +1052,47 @@ void tensor_cmatmul(int n1,std::complex<T>* i1,int* d1,std::complex<T>* i2,int* 
         ot.template chip<0>(i) = lt.template chip<0>(i).contract(rt.template chip<0>(i),d);
 }
 
-extern "C" void pg_tensor_matmul(int oid,int m1,int n1,void* i1,int* d1,void* i2,int* d2,bool* b2,void* o3,int* d3)
+extern "C" void pg_eigen_matmul(int oid,int m1,int n1,void* i1,int* d1,void* i2,int* d2,bool* b2,void* o3,int* d3)
 {
     if (oid == 700)
     {
         if (n1 - m1 == 2)
-            tensor_rmatmul<float, Eigen::RowMajor>(n1,(float*) i1, d1,(float*) i2, d2, b2,(float*) o3, d3);
+            eigen_rmatmul<float, Eigen::RowMajor>(n1,(float*) i1, d1,(float*) i2, d2, b2,(float*) o3, d3);
         else if (n1 - m1 == 3)
-            tensor_cmatmul<float, Eigen::RowMajor>(n1,(std::complex<float> *) i1, d1,(std::complex<float> *) i2, d2, b2,(std::complex<float> *) o3, d3);
+            eigen_cmatmul<float, Eigen::RowMajor>(n1,(std::complex<float> *) i1, d1,(std::complex<float> *) i2, d2, b2,(std::complex<float> *) o3, d3);
     }
     else if (oid == 701)
     {
         if (n1 - m1 == 2)
-            tensor_rmatmul<double, Eigen::RowMajor>(n1,(double*) i1, d1,(double*) i2, d2, b2,(double*) o3, d3);
+            eigen_rmatmul<double, Eigen::RowMajor>(n1,(double*) i1, d1,(double*) i2, d2, b2,(double*) o3, d3);
         else if (n1 - m1 == 3)
-            tensor_cmatmul<double, Eigen::RowMajor>(n1,(std::complex<double> *) i1, d1,(std::complex<double> *) i2, d2, b2,(std::complex<double> *) o3, d3);
+            eigen_cmatmul<double, Eigen::RowMajor>(n1,(std::complex<double> *) i1, d1,(std::complex<double> *) i2, d2, b2,(std::complex<double> *) o3, d3);
     }
     else if (oid ==  21)
     {
         if (n1 - m1 == 2)
-            tensor_rmatmul<short, Eigen::RowMajor>(n1,(short*) i1, d1,(short*) i2, d2, b2,(short*) o3, d3);
+            eigen_rmatmul<short, Eigen::RowMajor>(n1,(short*) i1, d1,(short*) i2, d2, b2,(short*) o3, d3);
         else if (n1 - m1 == 3)
-            tensor_cmatmul<short, Eigen::RowMajor>(n1,(std::complex<short> *) i1, d1,(std::complex<short> *) i2, d2, b2,(std::complex<short> *) o3, d3);
+            eigen_cmatmul<short, Eigen::RowMajor>(n1,(std::complex<short> *) i1, d1,(std::complex<short> *) i2, d2, b2,(std::complex<short> *) o3, d3);
     }
     else if (oid ==  23)
     {
         if (n1 - m1 == 2)
-            tensor_rmatmul<int, Eigen::RowMajor>(n1,(int*) i1, d1,(int*) i2, d2, b2,(int*) o3, d3);
+            eigen_rmatmul<int, Eigen::RowMajor>(n1,(int*) i1, d1,(int*) i2, d2, b2,(int*) o3, d3);
         else if (n1 - m1 == 3)
-            tensor_cmatmul<int, Eigen::RowMajor>(n1,(std::complex<int> *) i1, d1,(std::complex<int> *) i2, d2, b2,(std::complex<int> *) o3, d3);
+            eigen_cmatmul<int, Eigen::RowMajor>(n1,(std::complex<int> *) i1, d1,(std::complex<int> *) i2, d2, b2,(std::complex<int> *) o3, d3);
     }
     else if (oid ==  20)
     {
         if (n1 - m1 == 2)
-            tensor_rmatmul<long, Eigen::RowMajor>(n1,(long*) i1, d1,(long*) i2, d2, b2,(long*) o3, d3);
+            eigen_rmatmul<long, Eigen::RowMajor>(n1,(long*) i1, d1,(long*) i2, d2, b2,(long*) o3, d3);
         else if (n1 - m1 == 3)
-            tensor_cmatmul<long, Eigen::RowMajor>(n1,(std::complex<long> *) i1, d1,(std::complex<long> *) i2, d2, b2,(std::complex<long> *) o3, d3);
+            eigen_cmatmul<long, Eigen::RowMajor>(n1,(std::complex<long> *) i1, d1,(std::complex<long> *) i2, d2, b2,(std::complex<long> *) o3, d3);
     }
 }
 
 template<typename T,int L,int M>
-void tensor_softmax(T* in,int* d1,int ax,double* out)
+void eigen_softmax(T* in,int* d1,int ax,double* out)
 {
     Eigen::array<int, M> m;
     for (int i=0;i < M;i++) m[i] = d1[i];
@@ -1111,87 +1111,87 @@ void tensor_softmax(T* in,int* d1,int ax,double* out)
     y = a / (a.sum(r).reshape(s).broadcast(t));
 }
 
-extern "C" void pg_tensor_softmax(int oid,void* in,int n1,int* d1,int ax,void* out)
+extern "C" void pg_eigen_softmax(int oid,void* in,int n1,int* d1,int ax,void* out)
 {
     if (oid == 700)
     {
         if (n1 == 1)
-            tensor_softmax<float, Eigen::RowMajor, 1>((float*) in, d1, ax, (double*) out);
+            eigen_softmax<float, Eigen::RowMajor, 1>((float*) in, d1, ax, (double*) out);
         else if (n1 == 2)
-            tensor_softmax<float, Eigen::RowMajor, 2>((float*) in, d1, ax, (double*) out);
+            eigen_softmax<float, Eigen::RowMajor, 2>((float*) in, d1, ax, (double*) out);
         else if (n1 == 3)
-            tensor_softmax<float, Eigen::RowMajor, 3>((float*) in, d1, ax, (double*) out);
+            eigen_softmax<float, Eigen::RowMajor, 3>((float*) in, d1, ax, (double*) out);
         else if (n1 == 4)
-            tensor_softmax<float, Eigen::RowMajor, 4>((float*) in, d1, ax, (double*) out);
+            eigen_softmax<float, Eigen::RowMajor, 4>((float*) in, d1, ax, (double*) out);
         else if (n1 == 5)
-            tensor_softmax<float, Eigen::RowMajor, 5>((float*) in, d1, ax, (double*) out);
+            eigen_softmax<float, Eigen::RowMajor, 5>((float*) in, d1, ax, (double*) out);
         else if (n1 == 6)
-            tensor_softmax<float, Eigen::RowMajor, 6>((float*) in, d1, ax, (double*) out);
+            eigen_softmax<float, Eigen::RowMajor, 6>((float*) in, d1, ax, (double*) out);
     }
     else if (oid == 701)
     {
         if (n1 == 1)
-            tensor_softmax<double, Eigen::RowMajor, 1>((double*) in, d1, ax, (double*) out);
+            eigen_softmax<double, Eigen::RowMajor, 1>((double*) in, d1, ax, (double*) out);
         else if (n1 == 2)
-            tensor_softmax<double, Eigen::RowMajor, 2>((double*) in, d1, ax, (double*) out);
+            eigen_softmax<double, Eigen::RowMajor, 2>((double*) in, d1, ax, (double*) out);
         else if (n1 == 3)
-            tensor_softmax<double, Eigen::RowMajor, 3>((double*) in, d1, ax, (double*) out);
+            eigen_softmax<double, Eigen::RowMajor, 3>((double*) in, d1, ax, (double*) out);
         else if (n1 == 4)
-            tensor_softmax<double, Eigen::RowMajor, 4>((double*) in, d1, ax, (double*) out);
+            eigen_softmax<double, Eigen::RowMajor, 4>((double*) in, d1, ax, (double*) out);
         else if (n1 == 5)
-            tensor_softmax<double, Eigen::RowMajor, 5>((double*) in, d1, ax, (double*) out);
+            eigen_softmax<double, Eigen::RowMajor, 5>((double*) in, d1, ax, (double*) out);
         else if (n1 == 6)
-            tensor_softmax<double, Eigen::RowMajor, 6>((double*) in, d1, ax, (double*) out);
+            eigen_softmax<double, Eigen::RowMajor, 6>((double*) in, d1, ax, (double*) out);
     }
     else if (oid ==  21)
     {
         if (n1 == 1)
-            tensor_softmax<short, Eigen::RowMajor, 1>((short*) in, d1, ax, (double*) out);
+            eigen_softmax<short, Eigen::RowMajor, 1>((short*) in, d1, ax, (double*) out);
         else if (n1 == 2)
-            tensor_softmax<short, Eigen::RowMajor, 2>((short*) in, d1, ax, (double*) out);
+            eigen_softmax<short, Eigen::RowMajor, 2>((short*) in, d1, ax, (double*) out);
         else if (n1 == 3)
-            tensor_softmax<short, Eigen::RowMajor, 3>((short*) in, d1, ax, (double*) out);
+            eigen_softmax<short, Eigen::RowMajor, 3>((short*) in, d1, ax, (double*) out);
         else if (n1 == 4)
-            tensor_softmax<short, Eigen::RowMajor, 4>((short*) in, d1, ax, (double*) out);
+            eigen_softmax<short, Eigen::RowMajor, 4>((short*) in, d1, ax, (double*) out);
         else if (n1 == 5)
-            tensor_softmax<short, Eigen::RowMajor, 5>((short*) in, d1, ax, (double*) out);
+            eigen_softmax<short, Eigen::RowMajor, 5>((short*) in, d1, ax, (double*) out);
         else if (n1 == 6)
-            tensor_softmax<short, Eigen::RowMajor, 6>((short*) in, d1, ax, (double*) out);
+            eigen_softmax<short, Eigen::RowMajor, 6>((short*) in, d1, ax, (double*) out);
     }
     else if (oid ==  23)
     {
         if (n1 == 1)
-            tensor_softmax<int, Eigen::RowMajor, 1>((int*) in, d1, ax, (double*) out);
+            eigen_softmax<int, Eigen::RowMajor, 1>((int*) in, d1, ax, (double*) out);
         else if (n1 == 2)
-            tensor_softmax<int, Eigen::RowMajor, 2>((int*) in, d1, ax, (double*) out);
+            eigen_softmax<int, Eigen::RowMajor, 2>((int*) in, d1, ax, (double*) out);
         else if (n1 == 3)
-            tensor_softmax<int, Eigen::RowMajor, 3>((int*) in, d1, ax, (double*) out);
+            eigen_softmax<int, Eigen::RowMajor, 3>((int*) in, d1, ax, (double*) out);
         else if (n1 == 4)
-            tensor_softmax<int, Eigen::RowMajor, 4>((int*) in, d1, ax, (double*) out);
+            eigen_softmax<int, Eigen::RowMajor, 4>((int*) in, d1, ax, (double*) out);
         else if (n1 == 5)
-            tensor_softmax<int, Eigen::RowMajor, 5>((int*) in, d1, ax, (double*) out);
+            eigen_softmax<int, Eigen::RowMajor, 5>((int*) in, d1, ax, (double*) out);
         else if (n1 == 6)
-            tensor_softmax<int, Eigen::RowMajor, 6>((int*) in, d1, ax, (double*) out);
+            eigen_softmax<int, Eigen::RowMajor, 6>((int*) in, d1, ax, (double*) out);
     }
     else if (oid ==  20)
     {
         if (n1 == 1)
-            tensor_softmax<long, Eigen::RowMajor, 1>((long*) in, d1, ax, (double*) out);
+            eigen_softmax<long, Eigen::RowMajor, 1>((long*) in, d1, ax, (double*) out);
         else if (n1 == 2)
-            tensor_softmax<long, Eigen::RowMajor, 2>((long*) in, d1, ax, (double*) out);
+            eigen_softmax<long, Eigen::RowMajor, 2>((long*) in, d1, ax, (double*) out);
         else if (n1 == 3)
-            tensor_softmax<long, Eigen::RowMajor, 3>((long*) in, d1, ax, (double*) out);
+            eigen_softmax<long, Eigen::RowMajor, 3>((long*) in, d1, ax, (double*) out);
         else if (n1 == 4)
-            tensor_softmax<long, Eigen::RowMajor, 4>((long*) in, d1, ax, (double*) out);
+            eigen_softmax<long, Eigen::RowMajor, 4>((long*) in, d1, ax, (double*) out);
         else if (n1 == 5)
-            tensor_softmax<long, Eigen::RowMajor, 5>((long*) in, d1, ax, (double*) out);
+            eigen_softmax<long, Eigen::RowMajor, 5>((long*) in, d1, ax, (double*) out);
         else if (n1 == 6)
-            tensor_softmax<long, Eigen::RowMajor, 6>((long*) in, d1, ax, (double*) out);
+            eigen_softmax<long, Eigen::RowMajor, 6>((long*) in, d1, ax, (double*) out);
     }
 }
 
 template<typename T,int L,int M>
-void tensor_argpos(int fn,T* in,int* d1,int ax,long* out)
+void eigen_argpos(int fn,T* in,int* d1,int ax,long* out)
 {
     Eigen::array<int, M> m;
     for (int i=0;i < M;i++) m[i] = d1[i];
@@ -1204,87 +1204,87 @@ void tensor_argpos(int fn,T* in,int* d1,int ax,long* out)
     std::copy(y.data(), y.data() + y.size(), out);
 }
 
-extern "C" void pg_tensor_argpos(int oid,int fn,char* in,int n1,int* d1,void* out,int ax)
+extern "C" void pg_eigen_argpos(int oid,int fn,char* in,int n1,int* d1,void* out,int ax)
 {
     if (oid == 700)
     {
         if (n1 == 1)
-            tensor_argpos<float, Eigen::RowMajor, 1>(fn, (float*) in, d1, ax, (long*) out);
+            eigen_argpos<float, Eigen::RowMajor, 1>(fn, (float*) in, d1, ax, (long*) out);
         else if (n1 == 2)
-            tensor_argpos<float, Eigen::RowMajor, 2>(fn, (float*) in, d1, ax, (long*) out);
+            eigen_argpos<float, Eigen::RowMajor, 2>(fn, (float*) in, d1, ax, (long*) out);
         else if (n1 == 3)
-            tensor_argpos<float, Eigen::RowMajor, 3>(fn, (float*) in, d1, ax, (long*) out);
+            eigen_argpos<float, Eigen::RowMajor, 3>(fn, (float*) in, d1, ax, (long*) out);
         else if (n1 == 4)
-            tensor_argpos<float, Eigen::RowMajor, 4>(fn, (float*) in, d1, ax, (long*) out);
+            eigen_argpos<float, Eigen::RowMajor, 4>(fn, (float*) in, d1, ax, (long*) out);
         else if (n1 == 5)
-            tensor_argpos<float, Eigen::RowMajor, 5>(fn, (float*) in, d1, ax, (long*) out);
+            eigen_argpos<float, Eigen::RowMajor, 5>(fn, (float*) in, d1, ax, (long*) out);
         else if (n1 == 6)
-            tensor_argpos<float, Eigen::RowMajor, 6>(fn, (float*) in, d1, ax, (long*) out);
+            eigen_argpos<float, Eigen::RowMajor, 6>(fn, (float*) in, d1, ax, (long*) out);
     }
     else if (oid == 701)
     {
         if (n1 == 1)
-            tensor_argpos<double, Eigen::RowMajor, 1>(fn, (double*) in, d1, ax, (long*) out);
+            eigen_argpos<double, Eigen::RowMajor, 1>(fn, (double*) in, d1, ax, (long*) out);
         else if (n1 == 2)
-            tensor_argpos<double, Eigen::RowMajor, 2>(fn, (double*) in, d1, ax, (long*) out);
+            eigen_argpos<double, Eigen::RowMajor, 2>(fn, (double*) in, d1, ax, (long*) out);
         else if (n1 == 3)
-            tensor_argpos<double, Eigen::RowMajor, 3>(fn, (double*) in, d1, ax, (long*) out);
+            eigen_argpos<double, Eigen::RowMajor, 3>(fn, (double*) in, d1, ax, (long*) out);
         else if (n1 == 4)
-            tensor_argpos<double, Eigen::RowMajor, 4>(fn, (double*) in, d1, ax, (long*) out);
+            eigen_argpos<double, Eigen::RowMajor, 4>(fn, (double*) in, d1, ax, (long*) out);
         else if (n1 == 5)
-            tensor_argpos<double, Eigen::RowMajor, 5>(fn, (double*) in, d1, ax, (long*) out);
+            eigen_argpos<double, Eigen::RowMajor, 5>(fn, (double*) in, d1, ax, (long*) out);
         else if (n1 == 6)
-            tensor_argpos<double, Eigen::RowMajor, 6>(fn, (double*) in, d1, ax, (long*) out);
+            eigen_argpos<double, Eigen::RowMajor, 6>(fn, (double*) in, d1, ax, (long*) out);
     }
     else if (oid ==  21)
     {
         if (n1 == 1)
-            tensor_argpos<short, Eigen::RowMajor, 1>(fn, (short*) in, d1, ax, (long*) out);
+            eigen_argpos<short, Eigen::RowMajor, 1>(fn, (short*) in, d1, ax, (long*) out);
         else if (n1 == 2)
-            tensor_argpos<short, Eigen::RowMajor, 2>(fn, (short*) in, d1, ax, (long*) out);
+            eigen_argpos<short, Eigen::RowMajor, 2>(fn, (short*) in, d1, ax, (long*) out);
         else if (n1 == 3)
-            tensor_argpos<short, Eigen::RowMajor, 3>(fn, (short*) in, d1, ax, (long*) out);
+            eigen_argpos<short, Eigen::RowMajor, 3>(fn, (short*) in, d1, ax, (long*) out);
         else if (n1 == 4)
-            tensor_argpos<short, Eigen::RowMajor, 4>(fn, (short*) in, d1, ax, (long*) out);
+            eigen_argpos<short, Eigen::RowMajor, 4>(fn, (short*) in, d1, ax, (long*) out);
         else if (n1 == 5)
-            tensor_argpos<short, Eigen::RowMajor, 5>(fn, (short*) in, d1, ax, (long*) out);
+            eigen_argpos<short, Eigen::RowMajor, 5>(fn, (short*) in, d1, ax, (long*) out);
         else if (n1 == 6)
-            tensor_argpos<short, Eigen::RowMajor, 6>(fn, (short*) in, d1, ax, (long*) out);
+            eigen_argpos<short, Eigen::RowMajor, 6>(fn, (short*) in, d1, ax, (long*) out);
     }
     else if (oid ==  23)
     {
         if (n1 == 1)
-            tensor_argpos<int, Eigen::RowMajor, 1>(fn, (int*) in, d1, ax, (long*) out);
+            eigen_argpos<int, Eigen::RowMajor, 1>(fn, (int*) in, d1, ax, (long*) out);
         else if (n1 == 2)
-            tensor_argpos<int, Eigen::RowMajor, 2>(fn, (int*) in, d1, ax, (long*) out);
+            eigen_argpos<int, Eigen::RowMajor, 2>(fn, (int*) in, d1, ax, (long*) out);
         else if (n1 == 3)
-            tensor_argpos<int, Eigen::RowMajor, 3>(fn, (int*) in, d1, ax, (long*) out);
+            eigen_argpos<int, Eigen::RowMajor, 3>(fn, (int*) in, d1, ax, (long*) out);
         else if (n1 == 4)
-            tensor_argpos<int, Eigen::RowMajor, 4>(fn, (int*) in, d1, ax, (long*) out);
+            eigen_argpos<int, Eigen::RowMajor, 4>(fn, (int*) in, d1, ax, (long*) out);
         else if (n1 == 5)
-            tensor_argpos<int, Eigen::RowMajor, 5>(fn, (int*) in, d1, ax, (long*) out);
+            eigen_argpos<int, Eigen::RowMajor, 5>(fn, (int*) in, d1, ax, (long*) out);
         else if (n1 == 6)
-            tensor_argpos<int, Eigen::RowMajor, 6>(fn, (int*) in, d1, ax, (long*) out);
+            eigen_argpos<int, Eigen::RowMajor, 6>(fn, (int*) in, d1, ax, (long*) out);
     }
     else if (oid ==  20)
     {
         if (n1 == 1)
-            tensor_argpos<long, Eigen::RowMajor, 1>(fn, (long*) in, d1, ax, (long*) out);
+            eigen_argpos<long, Eigen::RowMajor, 1>(fn, (long*) in, d1, ax, (long*) out);
         else if (n1 == 2)
-            tensor_argpos<long, Eigen::RowMajor, 2>(fn, (long*) in, d1, ax, (long*) out);
+            eigen_argpos<long, Eigen::RowMajor, 2>(fn, (long*) in, d1, ax, (long*) out);
         else if (n1 == 3)
-            tensor_argpos<long, Eigen::RowMajor, 3>(fn, (long*) in, d1, ax, (long*) out);
+            eigen_argpos<long, Eigen::RowMajor, 3>(fn, (long*) in, d1, ax, (long*) out);
         else if (n1 == 4)
-            tensor_argpos<long, Eigen::RowMajor, 4>(fn, (long*) in, d1, ax, (long*) out);
+            eigen_argpos<long, Eigen::RowMajor, 4>(fn, (long*) in, d1, ax, (long*) out);
         else if (n1 == 5)
-            tensor_argpos<long, Eigen::RowMajor, 5>(fn, (long*) in, d1, ax, (long*) out);
+            eigen_argpos<long, Eigen::RowMajor, 5>(fn, (long*) in, d1, ax, (long*) out);
         else if (n1 == 6)
-            tensor_argpos<long, Eigen::RowMajor, 6>(fn, (long*) in, d1, ax, (long*) out);
+            eigen_argpos<long, Eigen::RowMajor, 6>(fn, (long*) in, d1, ax, (long*) out);
     }
 }
 
 template<typename T,int L,int M>
-void tensor_mean_absolute_error(T* i1,int* d1,T* i2,int ax,double* o3)
+void eigen_mean_absolute_error(T* i1,int* d1,T* i2,int ax,double* o3)
 {
     Eigen::array<int, M> m;
     for (int i=0;i < M;i++) m[i] = d1[i];
@@ -1298,7 +1298,7 @@ void tensor_mean_absolute_error(T* i1,int* d1,T* i2,int ax,double* o3)
 }
 
 template<typename T,int L,int M>
-void tensor_mean_squared_error(T* i1,int* d1,T* i2,int ax,double* o3)
+void eigen_mean_squared_error(T* i1,int* d1,T* i2,int ax,double* o3)
 {
     Eigen::array<int, M> m;
     for (int i=0;i < M;i++) m[i] = d1[i];
@@ -1312,7 +1312,7 @@ void tensor_mean_squared_error(T* i1,int* d1,T* i2,int ax,double* o3)
 }
 
 template<typename T,int L,int M>
-void tensor_categorical_cross_entropy(T* i1,int* d1,T* i2,int ax,double* o3)
+void eigen_categorical_cross_entropy(T* i1,int* d1,T* i2,int ax,double* o3)
 {
     Eigen::array<int, M> m;
     for (int i=0;i < M;i++) m[i] = d1[i];
@@ -1326,7 +1326,7 @@ void tensor_categorical_cross_entropy(T* i1,int* d1,T* i2,int ax,double* o3)
 }
 
 template<typename T,int L,int M>
-void tensor_softmax_cross_entropy(T* i1,int* d1,T* i2,int ax,double* o3)
+void eigen_softmax_cross_entropy(T* i1,int* d1,T* i2,int ax,double* o3)
 {
     Eigen::array<int, M> m;
     for (int i=0;i < M;i++) m[i] = d1[i];
@@ -1348,75 +1348,75 @@ void tensor_softmax_cross_entropy(T* i1,int* d1,T* i2,int ax,double* o3)
     std::copy(c.data(), c.data() + c.size(), o3);
 }
 
-extern "C" void pg_tensor_loss(int oid,int fn,void* i1,int n1,int* d1,void* i2,void* o3,int ax)
+extern "C" void pg_eigen_loss(int oid,int fn,void* i1,int n1,int* d1,void* i2,void* o3,int ax)
 {
     if (oid == 700)
     {
         if (n1 == 1)
         {
             if (fn == 1)
-                tensor_mean_absolute_error<float, Eigen::RowMajor, 1>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+                eigen_mean_absolute_error<float, Eigen::RowMajor, 1>((float*) i1, d1, (float*) i2, ax, (double*) o3);
             else if (fn == 2)
-                tensor_mean_squared_error<float, Eigen::RowMajor, 1>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+                eigen_mean_squared_error<float, Eigen::RowMajor, 1>((float*) i1, d1, (float*) i2, ax, (double*) o3);
             else if (fn == 3)
-                tensor_categorical_cross_entropy<float, Eigen::RowMajor, 1>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+                eigen_categorical_cross_entropy<float, Eigen::RowMajor, 1>((float*) i1, d1, (float*) i2, ax, (double*) o3);
             else if (fn == 4)
-                tensor_softmax_cross_entropy<float, Eigen::RowMajor, 1>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+                eigen_softmax_cross_entropy<float, Eigen::RowMajor, 1>((float*) i1, d1, (float*) i2, ax, (double*) o3);
         }
         else if (n1 == 2)
         {
             if (fn == 1)
-                tensor_mean_absolute_error<float, Eigen::RowMajor, 2>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+                eigen_mean_absolute_error<float, Eigen::RowMajor, 2>((float*) i1, d1, (float*) i2, ax, (double*) o3);
             else if (fn == 2)
-                tensor_mean_squared_error<float, Eigen::RowMajor, 2>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+                eigen_mean_squared_error<float, Eigen::RowMajor, 2>((float*) i1, d1, (float*) i2, ax, (double*) o3);
             else if (fn == 3)
-                tensor_categorical_cross_entropy<float, Eigen::RowMajor, 2>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+                eigen_categorical_cross_entropy<float, Eigen::RowMajor, 2>((float*) i1, d1, (float*) i2, ax, (double*) o3);
             else if (fn == 4)
-                tensor_softmax_cross_entropy<float, Eigen::RowMajor, 2>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+                eigen_softmax_cross_entropy<float, Eigen::RowMajor, 2>((float*) i1, d1, (float*) i2, ax, (double*) o3);
         }
         else if (n1 == 3)
         {
             if (fn == 1)
-                tensor_mean_absolute_error<float, Eigen::RowMajor, 3>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+                eigen_mean_absolute_error<float, Eigen::RowMajor, 3>((float*) i1, d1, (float*) i2, ax, (double*) o3);
             else if (fn == 2)
-                tensor_mean_squared_error<float, Eigen::RowMajor, 3>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+                eigen_mean_squared_error<float, Eigen::RowMajor, 3>((float*) i1, d1, (float*) i2, ax, (double*) o3);
             else if (fn == 3)
-                tensor_categorical_cross_entropy<float, Eigen::RowMajor, 3>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+                eigen_categorical_cross_entropy<float, Eigen::RowMajor, 3>((float*) i1, d1, (float*) i2, ax, (double*) o3);
             else if (fn == 4)
-                tensor_softmax_cross_entropy<float, Eigen::RowMajor, 3>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+                eigen_softmax_cross_entropy<float, Eigen::RowMajor, 3>((float*) i1, d1, (float*) i2, ax, (double*) o3);
         }
         else if (n1 == 4)
         {
             if (fn == 1)
-                tensor_mean_absolute_error<float, Eigen::RowMajor, 4>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+                eigen_mean_absolute_error<float, Eigen::RowMajor, 4>((float*) i1, d1, (float*) i2, ax, (double*) o3);
             else if (fn == 2)
-                tensor_mean_squared_error<float, Eigen::RowMajor, 4>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+                eigen_mean_squared_error<float, Eigen::RowMajor, 4>((float*) i1, d1, (float*) i2, ax, (double*) o3);
             else if (fn == 3)
-                tensor_categorical_cross_entropy<float, Eigen::RowMajor, 4>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+                eigen_categorical_cross_entropy<float, Eigen::RowMajor, 4>((float*) i1, d1, (float*) i2, ax, (double*) o3);
             else if (fn == 4)
-                tensor_softmax_cross_entropy<float, Eigen::RowMajor, 4>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+                eigen_softmax_cross_entropy<float, Eigen::RowMajor, 4>((float*) i1, d1, (float*) i2, ax, (double*) o3);
         }
         else if (n1 == 5)
         {
             if (fn == 1)
-                tensor_mean_absolute_error<float, Eigen::RowMajor, 5>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+                eigen_mean_absolute_error<float, Eigen::RowMajor, 5>((float*) i1, d1, (float*) i2, ax, (double*) o3);
             else if (fn == 2)
-                tensor_mean_squared_error<float, Eigen::RowMajor, 5>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+                eigen_mean_squared_error<float, Eigen::RowMajor, 5>((float*) i1, d1, (float*) i2, ax, (double*) o3);
             else if (fn == 3)
-                tensor_categorical_cross_entropy<float, Eigen::RowMajor, 5>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+                eigen_categorical_cross_entropy<float, Eigen::RowMajor, 5>((float*) i1, d1, (float*) i2, ax, (double*) o3);
             else if (fn == 4)
-                tensor_softmax_cross_entropy<float, Eigen::RowMajor, 5>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+                eigen_softmax_cross_entropy<float, Eigen::RowMajor, 5>((float*) i1, d1, (float*) i2, ax, (double*) o3);
         }
         else if (n1 == 6)
         {
             if (fn == 1)
-                tensor_mean_absolute_error<float, Eigen::RowMajor, 6>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+                eigen_mean_absolute_error<float, Eigen::RowMajor, 6>((float*) i1, d1, (float*) i2, ax, (double*) o3);
             else if (fn == 2)
-                tensor_mean_squared_error<float, Eigen::RowMajor, 6>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+                eigen_mean_squared_error<float, Eigen::RowMajor, 6>((float*) i1, d1, (float*) i2, ax, (double*) o3);
             else if (fn == 3)
-                tensor_categorical_cross_entropy<float, Eigen::RowMajor, 6>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+                eigen_categorical_cross_entropy<float, Eigen::RowMajor, 6>((float*) i1, d1, (float*) i2, ax, (double*) o3);
             else if (fn == 4)
-                tensor_softmax_cross_entropy<float, Eigen::RowMajor, 6>((float*) i1, d1, (float*) i2, ax, (double*) o3);
+                eigen_softmax_cross_entropy<float, Eigen::RowMajor, 6>((float*) i1, d1, (float*) i2, ax, (double*) o3);
         }
     }
     else if (oid == 701)
@@ -1424,74 +1424,74 @@ extern "C" void pg_tensor_loss(int oid,int fn,void* i1,int n1,int* d1,void* i2,v
         if (n1 == 1)
         {
             if (fn == 1)
-                tensor_mean_absolute_error<double, Eigen::RowMajor, 1>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+                eigen_mean_absolute_error<double, Eigen::RowMajor, 1>((double*) i1, d1, (double*) i2, ax, (double*) o3);
             else if (fn == 2)
-                tensor_mean_squared_error<double, Eigen::RowMajor, 1>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+                eigen_mean_squared_error<double, Eigen::RowMajor, 1>((double*) i1, d1, (double*) i2, ax, (double*) o3);
             else if (fn == 3)
-                tensor_categorical_cross_entropy<double, Eigen::RowMajor, 1>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+                eigen_categorical_cross_entropy<double, Eigen::RowMajor, 1>((double*) i1, d1, (double*) i2, ax, (double*) o3);
             else if (fn == 4)
-                tensor_softmax_cross_entropy<double, Eigen::RowMajor, 1>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+                eigen_softmax_cross_entropy<double, Eigen::RowMajor, 1>((double*) i1, d1, (double*) i2, ax, (double*) o3);
         }
         else if (n1 == 2)
         {
             if (fn == 1)
-                tensor_mean_absolute_error<double, Eigen::RowMajor, 2>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+                eigen_mean_absolute_error<double, Eigen::RowMajor, 2>((double*) i1, d1, (double*) i2, ax, (double*) o3);
             else if (fn == 2)
-                tensor_mean_squared_error<double, Eigen::RowMajor, 2>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+                eigen_mean_squared_error<double, Eigen::RowMajor, 2>((double*) i1, d1, (double*) i2, ax, (double*) o3);
             else if (fn == 3)
-                tensor_categorical_cross_entropy<double, Eigen::RowMajor, 2>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+                eigen_categorical_cross_entropy<double, Eigen::RowMajor, 2>((double*) i1, d1, (double*) i2, ax, (double*) o3);
             else if (fn == 4)
-                tensor_softmax_cross_entropy<double, Eigen::RowMajor, 2>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+                eigen_softmax_cross_entropy<double, Eigen::RowMajor, 2>((double*) i1, d1, (double*) i2, ax, (double*) o3);
         }
         else if (n1 == 3)
         {
             if (fn == 1)
-                tensor_mean_absolute_error<double, Eigen::RowMajor, 3>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+                eigen_mean_absolute_error<double, Eigen::RowMajor, 3>((double*) i1, d1, (double*) i2, ax, (double*) o3);
             else if (fn == 2)
-                tensor_mean_squared_error<double, Eigen::RowMajor, 3>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+                eigen_mean_squared_error<double, Eigen::RowMajor, 3>((double*) i1, d1, (double*) i2, ax, (double*) o3);
             else if (fn == 3)
-                tensor_categorical_cross_entropy<double, Eigen::RowMajor, 3>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+                eigen_categorical_cross_entropy<double, Eigen::RowMajor, 3>((double*) i1, d1, (double*) i2, ax, (double*) o3);
             else if (fn == 4)
-                tensor_softmax_cross_entropy<double, Eigen::RowMajor, 3>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+                eigen_softmax_cross_entropy<double, Eigen::RowMajor, 3>((double*) i1, d1, (double*) i2, ax, (double*) o3);
         }
         else if (n1 == 4)
         {
             if (fn == 1)
-                tensor_mean_absolute_error<double, Eigen::RowMajor, 4>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+                eigen_mean_absolute_error<double, Eigen::RowMajor, 4>((double*) i1, d1, (double*) i2, ax, (double*) o3);
             else if (fn == 2)
-                tensor_mean_squared_error<double, Eigen::RowMajor, 4>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+                eigen_mean_squared_error<double, Eigen::RowMajor, 4>((double*) i1, d1, (double*) i2, ax, (double*) o3);
             else if (fn == 3)
-                tensor_categorical_cross_entropy<double, Eigen::RowMajor, 4>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+                eigen_categorical_cross_entropy<double, Eigen::RowMajor, 4>((double*) i1, d1, (double*) i2, ax, (double*) o3);
             else if (fn == 4)
-                tensor_softmax_cross_entropy<double, Eigen::RowMajor, 4>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+                eigen_softmax_cross_entropy<double, Eigen::RowMajor, 4>((double*) i1, d1, (double*) i2, ax, (double*) o3);
         }
         else if (n1 == 5)
         {
             if (fn == 1)
-                tensor_mean_absolute_error<double, Eigen::RowMajor, 5>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+                eigen_mean_absolute_error<double, Eigen::RowMajor, 5>((double*) i1, d1, (double*) i2, ax, (double*) o3);
             else if (fn == 2)
-                tensor_mean_squared_error<double, Eigen::RowMajor, 5>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+                eigen_mean_squared_error<double, Eigen::RowMajor, 5>((double*) i1, d1, (double*) i2, ax, (double*) o3);
             else if (fn == 3)
-                tensor_categorical_cross_entropy<double, Eigen::RowMajor, 5>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+                eigen_categorical_cross_entropy<double, Eigen::RowMajor, 5>((double*) i1, d1, (double*) i2, ax, (double*) o3);
             else if (fn == 4)
-                tensor_softmax_cross_entropy<double, Eigen::RowMajor, 5>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+                eigen_softmax_cross_entropy<double, Eigen::RowMajor, 5>((double*) i1, d1, (double*) i2, ax, (double*) o3);
         }
         else if (n1 == 6)
         {
             if (fn == 1)
-                tensor_mean_absolute_error<double, Eigen::RowMajor, 6>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+                eigen_mean_absolute_error<double, Eigen::RowMajor, 6>((double*) i1, d1, (double*) i2, ax, (double*) o3);
             else if (fn == 2)
-                tensor_mean_squared_error<double, Eigen::RowMajor, 6>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+                eigen_mean_squared_error<double, Eigen::RowMajor, 6>((double*) i1, d1, (double*) i2, ax, (double*) o3);
             else if (fn == 3)
-                tensor_categorical_cross_entropy<double, Eigen::RowMajor, 6>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+                eigen_categorical_cross_entropy<double, Eigen::RowMajor, 6>((double*) i1, d1, (double*) i2, ax, (double*) o3);
             else if (fn == 4)
-                tensor_softmax_cross_entropy<double, Eigen::RowMajor, 6>((double*) i1, d1, (double*) i2, ax, (double*) o3);
+                eigen_softmax_cross_entropy<double, Eigen::RowMajor, 6>((double*) i1, d1, (double*) i2, ax, (double*) o3);
         }
     }
 }
 
 template<typename T,int L,int M>
-void tensor_unpool(int fn,T* i1,int* d1,int* k2,int* s3,int* p4,T* g5,int* d5,T* o6)
+void eigen_unpool(int fn,T* i1,int* d1,int* k2,int* s3,int* p4,T* g5,int* d5,T* o6)
 {
     Eigen::array<int, M> m;
     for (int i=0;i < M;i++) m[i] = d1[i];
@@ -1561,30 +1561,30 @@ void tensor_unpool(int fn,T* i1,int* d1,int* k2,int* s3,int* p4,T* g5,int* d5,T*
     std::copy(ft.data(), ft.data() + ft.size(), o6);
 }
 
-extern "C" void pg_tensor_unpool(int oid,int fn,void* i1,int n1,int* d1,int* k2,int* s3,int* p4,void* g5,int* d5,void* o6)
+extern "C" void pg_eigen_unpool(int oid,int fn,void* i1,int n1,int* d1,int* k2,int* s3,int* p4,void* g5,int* d5,void* o6)
 {
     if (oid == 700)
     {
         if (n1 == 3)
-            tensor_unpool<float, Eigen::RowMajor, 3>(fn, (float*) i1, d1, k2, s3, p4, (float*) g5, d5, (float*) o6);
+            eigen_unpool<float, Eigen::RowMajor, 3>(fn, (float*) i1, d1, k2, s3, p4, (float*) g5, d5, (float*) o6);
         else if (n1 == 4)
-            tensor_unpool<float, Eigen::RowMajor, 4>(fn, (float*) i1, d1, k2, s3, p4, (float*) g5, d5, (float*) o6);
+            eigen_unpool<float, Eigen::RowMajor, 4>(fn, (float*) i1, d1, k2, s3, p4, (float*) g5, d5, (float*) o6);
         else if (n1 == 5)
-            tensor_unpool<float, Eigen::RowMajor, 5>(fn, (float*) i1, d1, k2, s3, p4, (float*) g5, d5, (float*) o6);
+            eigen_unpool<float, Eigen::RowMajor, 5>(fn, (float*) i1, d1, k2, s3, p4, (float*) g5, d5, (float*) o6);
     }
     else if (oid == 701)
     {
         if (n1 == 3)
-            tensor_unpool<double, Eigen::RowMajor, 3>(fn, (double*) i1, d1, k2, s3, p4, (double*) g5, d5, (double*) o6);
+            eigen_unpool<double, Eigen::RowMajor, 3>(fn, (double*) i1, d1, k2, s3, p4, (double*) g5, d5, (double*) o6);
         else if (n1 == 4)
-            tensor_unpool<double, Eigen::RowMajor, 4>(fn, (double*) i1, d1, k2, s3, p4, (double*) g5, d5, (double*) o6);
+            eigen_unpool<double, Eigen::RowMajor, 4>(fn, (double*) i1, d1, k2, s3, p4, (double*) g5, d5, (double*) o6);
         else if (n1 == 5)
-            tensor_unpool<double, Eigen::RowMajor, 5>(fn, (double*) i1, d1, k2, s3, p4, (double*) g5, d5, (double*) o6);
+            eigen_unpool<double, Eigen::RowMajor, 5>(fn, (double*) i1, d1, k2, s3, p4, (double*) g5, d5, (double*) o6);
     }
 }
 
 template<typename T,int L,int M>
-void tensor_convt(T* i1,int* d1,T* k2,int* d2,int* s3,int* p4,T* g5,int* d5,T* o6,T* o7,T* o8)
+void eigen_convt(T* i1,int* d1,T* k2,int* d2,int* s3,int* p4,T* g5,int* d5,T* o6,T* o7,T* o8)
 {
     Eigen::array<int, M> m;
     for (int i=0;i < M;i++) m[i] = d1[i];
@@ -1669,24 +1669,24 @@ void tensor_convt(T* i1,int* d1,T* k2,int* d2,int* s3,int* p4,T* g5,int* d5,T* o
     }
 }
 
-extern "C" void pg_tensor_convt(int oid,void* i1,int n1,int* d1,void* k2,int* d2,int* s3,int* p4,void* g5,int* d5,void* o6,void* o7,void* o8)
+extern "C" void pg_eigen_convt(int oid,void* i1,int n1,int* d1,void* k2,int* d2,int* s3,int* p4,void* g5,int* d5,void* o6,void* o7,void* o8)
 {
     if (oid == 700)
     {
         if (n1 == 3)
-            tensor_convt<float, Eigen::RowMajor, 3>((float*) i1, d1, (float*) k2, d2, s3, p4, (float*) g5, d5, (float*) o6, (float*) o7, (float*) o8);
+            eigen_convt<float, Eigen::RowMajor, 3>((float*) i1, d1, (float*) k2, d2, s3, p4, (float*) g5, d5, (float*) o6, (float*) o7, (float*) o8);
         else if (n1 == 4)
-            tensor_convt<float, Eigen::RowMajor, 4>((float*) i1, d1, (float*) k2, d2, s3, p4, (float*) g5, d5, (float*) o6, (float*) o7, (float*) o8);
+            eigen_convt<float, Eigen::RowMajor, 4>((float*) i1, d1, (float*) k2, d2, s3, p4, (float*) g5, d5, (float*) o6, (float*) o7, (float*) o8);
         else if (n1 == 5)
-            tensor_convt<float, Eigen::RowMajor, 5>((float*) i1, d1, (float*) k2, d2, s3, p4, (float*) g5, d5, (float*) o6, (float*) o7, (float*) o8);
+            eigen_convt<float, Eigen::RowMajor, 5>((float*) i1, d1, (float*) k2, d2, s3, p4, (float*) g5, d5, (float*) o6, (float*) o7, (float*) o8);
     }
     else if (oid == 701)
     {
         if (n1 == 3)
-            tensor_convt<double, Eigen::RowMajor, 3>((double*) i1, d1, (double*) k2, d2, s3, p4, (double*) g5, d5, (double*) o6, (double*) o7, (double*) o8);
+            eigen_convt<double, Eigen::RowMajor, 3>((double*) i1, d1, (double*) k2, d2, s3, p4, (double*) g5, d5, (double*) o6, (double*) o7, (double*) o8);
         else if (n1 == 4)
-            tensor_convt<double, Eigen::RowMajor, 4>((double*) i1, d1, (double*) k2, d2, s3, p4, (double*) g5, d5, (double*) o6, (double*) o7, (double*) o8);
+            eigen_convt<double, Eigen::RowMajor, 4>((double*) i1, d1, (double*) k2, d2, s3, p4, (double*) g5, d5, (double*) o6, (double*) o7, (double*) o8);
         else if (n1 == 5)
-            tensor_convt<double, Eigen::RowMajor, 5>((double*) i1, d1, (double*) k2, d2, s3, p4, (double*) g5, d5, (double*) o6, (double*) o7, (double*) o8);
+            eigen_convt<double, Eigen::RowMajor, 5>((double*) i1, d1, (double*) k2, d2, s3, p4, (double*) g5, d5, (double*) o6, (double*) o7, (double*) o8);
     }
 }

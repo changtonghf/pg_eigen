@@ -12,24 +12,24 @@
 PG_MODULE_MAGIC;
 #endif
 
-extern void pg_tensor_reduce(int oid,int fn,char* in,int n1,int* d1,void* out,int n2,int* d2);
-extern void pg_tensor_fft(int oid,bool forward,char* in,int n1,int* d1,void* out,int n2,int* d2);
-extern void pg_tensor_random(int fn,int c1,double* out,double a1,double b1,int s1);
-extern void pg_tensor_shuffle(int oid,int s1,int c1,void* out);
-extern void pg_tensor_binaryop(int oid,int fn,int c1,void* a1,void* a2);
-extern void pg_tensor_unaryop(int oid,int fn,int c1,void* a1);
-extern void pg_tensor_convolve(int oid,void* i1,int n1,int* d1,void* k2,int* d2,int* s3,int* p4,void* o5,int* d5);
-extern void pg_tensor_pool(int oid,int fn,void* i1,int n1,int* d1,int* k2,int* s3,int* p4,void* o5,int* d5);
-extern void pg_tensor_activate(int oid,int fn,int c1,void* a1,float g);
-extern void pg_tensor_dropout(int oid,void* i1,int n1,int* d1,float r2,int* n2,int s2);
-extern void pg_tensor_matmul(int oid,int m1,int n1,void* i1,int* d1,void* i2,int* d2,bool* b2,void* o3,int* d3);
-extern void pg_tensor_softmax(int oid,void* in,int n1,int* d1,int ax,void* out);
-extern void pg_tensor_argpos(int oid,int fn,char* in,int n1,int* d1,void* out,int ax);
-extern void pg_tensor_loss(int oid,int fn,void* i1,int n1,int* d1,void* i2,void* o3,int ax);
-extern void pg_tensor_unpool(int oid,int fn,void* i1,int n1,int* d1,int* k2,int* s3,int* p4,void* g5,int* d5,void* o6);
-extern void pg_tensor_convt(int oid,void* i1,int n1,int* d1,void* k2,int* d2,int* s3,int* p4,void* g5,int* d5,void* o6,void* o7,void* o8);
+extern void pg_eigen_reduce(int oid,int fn,char* in,int n1,int* d1,void* out,int n2,int* d2);
+extern void pg_eigen_fft(int oid,bool forward,char* in,int n1,int* d1,void* out,int n2,int* d2);
+extern void pg_eigen_random(int fn,int c1,double* out,double a1,double b1,int s1);
+extern void pg_eigen_shuffle(int oid,int s1,int c1,void* out);
+extern void pg_eigen_binaryop(int oid,int fn,int c1,void* a1,void* a2);
+extern void pg_eigen_unaryop(int oid,int fn,int c1,void* a1);
+extern void pg_eigen_convolve(int oid,void* i1,int n1,int* d1,void* k2,int* d2,int* s3,int* p4,void* o5,int* d5);
+extern void pg_eigen_pool(int oid,int fn,void* i1,int n1,int* d1,int* k2,int* s3,int* p4,void* o5,int* d5);
+extern void pg_eigen_activate(int oid,int fn,int c1,void* a1,float g);
+extern void pg_eigen_dropout(int oid,void* i1,int n1,int* d1,float r2,int* n2,int s2);
+extern void pg_eigen_matmul(int oid,int m1,int n1,void* i1,int* d1,void* i2,int* d2,bool* b2,void* o3,int* d3);
+extern void pg_eigen_softmax(int oid,void* in,int n1,int* d1,int ax,void* out);
+extern void pg_eigen_argpos(int oid,int fn,char* in,int n1,int* d1,void* out,int ax);
+extern void pg_eigen_loss(int oid,int fn,void* i1,int n1,int* d1,void* i2,void* o3,int ax);
+extern void pg_eigen_unpool(int oid,int fn,void* i1,int n1,int* d1,int* k2,int* s3,int* p4,void* g5,int* d5,void* o6);
+extern void pg_eigen_convt(int oid,void* i1,int n1,int* d1,void* k2,int* d2,int* s3,int* p4,void* g5,int* d5,void* o6,void* o7,void* o8);
 
-extern void pg_cuda_convolve(int oid,void* i1,int n1,int* d1,void* k2,int* d2,int* s3,int* p4,void* o5,int* d5);
+extern void pg_cudnn_convolve(int oid,void* i1,int n1,int* d1,void* k2,int* d2,int* s3,int* p4,void* o5,int* d5);
 
 PG_FUNCTION_INFO_V1(array_reduce);
 PG_FUNCTION_INFO_V1(array_fft);
@@ -169,15 +169,15 @@ Datum array_reduce(PG_FUNCTION_ARGS)
     INSTR_TIME_SET_CURRENT(s1);
 
     if (strcasecmp(fn, "sum") == 0)
-        pg_tensor_reduce(t1, 1, p1, n1, d1, v3, (d2 ? d2[0] : 0), p2);
+        pg_eigen_reduce(t1, 1, p1, n1, d1, v3, (d2 ? d2[0] : 0), p2);
     else if (strcasecmp(fn, "mean") == 0)
-        pg_tensor_reduce(t1, 2, p1, n1, d1, v3, (d2 ? d2[0] : 0), p2);
+        pg_eigen_reduce(t1, 2, p1, n1, d1, v3, (d2 ? d2[0] : 0), p2);
     else if (strcasecmp(fn, "prod") == 0)
-        pg_tensor_reduce(t1, 3, p1, n1, d1, v3, (d2 ? d2[0] : 0), p2);
+        pg_eigen_reduce(t1, 3, p1, n1, d1, v3, (d2 ? d2[0] : 0), p2);
     else if (strcasecmp(fn, "maximum") == 0)
-        pg_tensor_reduce(t1, 4, p1, n1, d1, v3, (d2 ? d2[0] : 0), p2);
+        pg_eigen_reduce(t1, 4, p1, n1, d1, v3, (d2 ? d2[0] : 0), p2);
     else if (strcasecmp(fn, "minimum") == 0)
-        pg_tensor_reduce(t1, 5, p1, n1, d1, v3, (d2 ? d2[0] : 0), p2);
+        pg_eigen_reduce(t1, 5, p1, n1, d1, v3, (d2 ? d2[0] : 0), p2);
 
     INSTR_TIME_SET_CURRENT(s2);
     INSTR_TIME_SUBTRACT(s2,s1);
@@ -291,7 +291,7 @@ Datum array_fft(PG_FUNCTION_ARGS)
     }
 
     INSTR_TIME_SET_CURRENT(s1);
-    pg_tensor_fft(t1, fw, p1, n1, d1, v3, c2, p2);
+    pg_eigen_fft(t1, fw, p1, n1, d1, v3, c2, p2);
     INSTR_TIME_SET_CURRENT(s2);
     INSTR_TIME_SUBTRACT(s2,s1);
     ereport(LOG,(errmsg("eigen discrete fourier transform spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));
@@ -364,13 +364,13 @@ Datum array_random(PG_FUNCTION_ARGS)
     v2 = (float8 *) palloc(c2 * sizeof(float8));
 
     if (strcasecmp(fn, "random_normal") == 0)
-        pg_tensor_random(1, c2, v2, a, b, s);
+        pg_eigen_random(1, c2, v2, a, b, s);
     else if (strcasecmp(fn, "truncated_normal") == 0)
-        pg_tensor_random(2, c2, v2, a, b, s);
+        pg_eigen_random(2, c2, v2, a, b, s);
     else if (strcasecmp(fn, "random_uniform") == 0)
-        pg_tensor_random(3, c2, v2, a, b, s);
+        pg_eigen_random(3, c2, v2, a, b, s);
     else if (strcasecmp(fn, "random_gamma") == 0)
-        pg_tensor_random(4, c2, v2, a, b, s);
+        pg_eigen_random(4, c2, v2, a, b, s);
 
     l2 = c2 * sizeof(float8) + ARR_OVERHEAD_NONULLS(c1);
     a2 = (ArrayType *) palloc0(l2);
@@ -415,7 +415,7 @@ Datum array_shuffle(PG_FUNCTION_ARGS)
     {
         for (uint32 i=0;i < d2;i++) s2 /= d1[i];
     }
-    pg_tensor_shuffle(t1, s2, c1, (void*) p1);
+    pg_eigen_shuffle(t1, s2, c1, (void*) p1);
     PG_RETURN_ARRAYTYPE_P(a1);
 }
 
@@ -455,25 +455,25 @@ Datum array_binaryop(PG_FUNCTION_ARGS)
     p2 = ARR_DATA_PTR(a2);
 
     if (strcasecmp(fn, "add") == 0)
-        pg_tensor_binaryop(t1, 1, c1, (void*) p1, (void*) p2);
+        pg_eigen_binaryop(t1, 1, c1, (void*) p1, (void*) p2);
     else if (strcasecmp(fn, "sub") == 0)
-        pg_tensor_binaryop(t1, 2, c1, (void*) p1, (void*) p2);
+        pg_eigen_binaryop(t1, 2, c1, (void*) p1, (void*) p2);
     else if (strcasecmp(fn, "mul") == 0)
-        pg_tensor_binaryop(t1, 3, c1, (void*) p1, (void*) p2);
+        pg_eigen_binaryop(t1, 3, c1, (void*) p1, (void*) p2);
     else if (strcasecmp(fn, "div") == 0)
-        pg_tensor_binaryop(t1, 4, c1, (void*) p1, (void*) p2);
+        pg_eigen_binaryop(t1, 4, c1, (void*) p1, (void*) p2);
     else if (strcasecmp(fn, "eq") == 0)
-        pg_tensor_binaryop(t1, 5, c1, (void*) p1, (void*) p2);
+        pg_eigen_binaryop(t1, 5, c1, (void*) p1, (void*) p2);
     else if (strcasecmp(fn, "ne") == 0)
-        pg_tensor_binaryop(t1, 6, c1, (void*) p1, (void*) p2);
+        pg_eigen_binaryop(t1, 6, c1, (void*) p1, (void*) p2);
     else if (strcasecmp(fn, "lt") == 0)
-        pg_tensor_binaryop(t1, 7, c1, (void*) p1, (void*) p2);
+        pg_eigen_binaryop(t1, 7, c1, (void*) p1, (void*) p2);
     else if (strcasecmp(fn, "le") == 0)
-        pg_tensor_binaryop(t1, 8, c1, (void*) p1, (void*) p2);
+        pg_eigen_binaryop(t1, 8, c1, (void*) p1, (void*) p2);
     else if (strcasecmp(fn, "gt") == 0)
-        pg_tensor_binaryop(t1, 9, c1, (void*) p1, (void*) p2);
+        pg_eigen_binaryop(t1, 9, c1, (void*) p1, (void*) p2);
     else if (strcasecmp(fn, "ge") == 0)
-        pg_tensor_binaryop(t1,10, c1, (void*) p1, (void*) p2);
+        pg_eigen_binaryop(t1,10, c1, (void*) p1, (void*) p2);
     else
         elog(ERROR, "\"%s\" is currently not supported in tensor broadcasting calculation.", fn);
 
@@ -501,17 +501,17 @@ Datum array_unaryop(PG_FUNCTION_ARGS)
     p1 = ARR_DATA_PTR(a1);
 
     if (strcasecmp(fn, "sqrt") == 0)
-        pg_tensor_unaryop(t1, 1, c1, (void*) p1);
+        pg_eigen_unaryop(t1, 1, c1, (void*) p1);
     else if (strcasecmp(fn, "abs") == 0)
-        pg_tensor_unaryop(t1, 2, c1, (void*) p1);
+        pg_eigen_unaryop(t1, 2, c1, (void*) p1);
     else if (strcasecmp(fn, "sigmoid") == 0)
-        pg_tensor_unaryop(t1, 3, c1, (void*) p1);
+        pg_eigen_unaryop(t1, 3, c1, (void*) p1);
     else if (strcasecmp(fn, "exp") == 0)
-        pg_tensor_unaryop(t1, 4, c1, (void*) p1);
+        pg_eigen_unaryop(t1, 4, c1, (void*) p1);
     else if (strcasecmp(fn, "log") == 0)
-        pg_tensor_unaryop(t1, 5, c1, (void*) p1);
+        pg_eigen_unaryop(t1, 5, c1, (void*) p1);
     else if (strcasecmp(fn, "sign") == 0)
-        pg_tensor_unaryop(t1, 6, c1, (void*) p1);
+        pg_eigen_unaryop(t1, 6, c1, (void*) p1);
     else
         elog(ERROR, "\"%s\" is currently not supported in tensor unary calculation.", fn);
 
@@ -676,7 +676,7 @@ Datum array_convolve(PG_FUNCTION_ARGS)
     }
 
     INSTR_TIME_SET_CURRENT(s1);
-    pg_tensor_convolve(t1, (void*) p1, n1, d1, (void*) p2, d2, p3, p4, (void*) p5, d5);
+    pg_eigen_convolve(t1, (void*) p1, n1, d1, (void*) p2, d2, p3, p4, (void*) p5, d5);
     INSTR_TIME_SET_CURRENT(s2);
     INSTR_TIME_SUBTRACT(s2,s1);
     ereport(LOG,(errmsg("eigen convolution spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));
@@ -855,9 +855,9 @@ Datum array_pool(PG_FUNCTION_ARGS)
 
     INSTR_TIME_SET_CURRENT(s1);
     if (strcasecmp(fn, "max") == 0)
-        pg_tensor_pool(t1, 1, (void*) p1, n1, d1, p2, p3, p4, (void*) p5, d5);
+        pg_eigen_pool(t1, 1, (void*) p1, n1, d1, p2, p3, p4, (void*) p5, d5);
     else if (strcasecmp(fn, "avg") == 0)
-        pg_tensor_pool(t1, 2, (void*) p1, n1, d1, p2, p3, p4, (void*) p5, d5);
+        pg_eigen_pool(t1, 2, (void*) p1, n1, d1, p2, p3, p4, (void*) p5, d5);
     INSTR_TIME_SET_CURRENT(s2);
     INSTR_TIME_SUBTRACT(s2,s1);
     ereport(LOG,(errmsg("eigen pooling spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));
@@ -912,15 +912,15 @@ Datum array_activate(PG_FUNCTION_ARGS)
     c1 = ArrayGetNItems(n1, d1);
 
     if (strcasecmp(fn, "relu") == 0)
-        pg_tensor_activate(t1, 1, c1, (void*) p1, g);
+        pg_eigen_activate(t1, 1, c1, (void*) p1, g);
     else if (strcasecmp(fn, "sigmoid") == 0)
-        pg_tensor_activate(t1, 2, c1, (void*) p1, g);
+        pg_eigen_activate(t1, 2, c1, (void*) p1, g);
     else if (strcasecmp(fn, "tanh") == 0)
-        pg_tensor_activate(t1, 3, c1, (void*) p1, g);
+        pg_eigen_activate(t1, 3, c1, (void*) p1, g);
     else if (strcasecmp(fn, "leaky relu") == 0)
-        pg_tensor_activate(t1, 4, c1, (void*) p1, g);
+        pg_eigen_activate(t1, 4, c1, (void*) p1, g);
     else if (strcasecmp(fn, "elu") == 0)
-        pg_tensor_activate(t1, 5, c1, (void*) p1, g);
+        pg_eigen_activate(t1, 5, c1, (void*) p1, g);
 
     PG_RETURN_ARRAYTYPE_P(a1);
 }
@@ -975,7 +975,7 @@ Datum array_dropout(PG_FUNCTION_ARGS)
     if (s2 < 0) elog(ERROR, "random seed is unreasonable.");
 
     INSTR_TIME_SET_CURRENT(s0);
-    pg_tensor_dropout(t1, (void*) p1, n1, d1, r2, p2, s2);
+    pg_eigen_dropout(t1, (void*) p1, n1, d1, r2, p2, s2);
     INSTR_TIME_SET_CURRENT(s1);
     INSTR_TIME_SUBTRACT(s1,s0);
     ereport(LOG,(errmsg("eigen dropout spend time %lu us", INSTR_TIME_GET_MICROSEC(s1))));
@@ -1108,7 +1108,7 @@ Datum array_matmul(PG_FUNCTION_ARGS)
     }
 
     INSTR_TIME_SET_CURRENT(s1);
-    pg_tensor_matmul(t1, p3[0], n1, (void*) p1, d1, (void*) p2, d2, p4, v5, d5);
+    pg_eigen_matmul(t1, p3[0], n1, (void*) p1, d1, (void*) p2, d2, p4, v5, d5);
     INSTR_TIME_SET_CURRENT(s2);
     INSTR_TIME_SUBTRACT(s2,s1);
     ereport(LOG,(errmsg("eigen tensor matrix multiplication spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));
@@ -1164,7 +1164,7 @@ Datum array_softmax(PG_FUNCTION_ARGS)
     v2 = palloc(c1 * sizeof(float8));
     l2 = c1 * sizeof(float8) + ARR_OVERHEAD_NONULLS(n1);
     INSTR_TIME_SET_CURRENT(s1);
-    pg_tensor_softmax(t1, (void*) p1, n1, d1, ax, v2);
+    pg_eigen_softmax(t1, (void*) p1, n1, d1, ax, v2);
     INSTR_TIME_SET_CURRENT(s2);
     INSTR_TIME_SUBTRACT(s2,s1);
     ereport(LOG,(errmsg("eigen tensor softmax spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));
@@ -1223,9 +1223,9 @@ Datum array_argpos(PG_FUNCTION_ARGS)
     l2 = c2 * sizeof(int64) + ARR_OVERHEAD_NONULLS(n2);
     INSTR_TIME_SET_CURRENT(s1);
     if (strcasecmp(fn, "argmax") == 0)
-        pg_tensor_argpos(t1, 1, p1, n1, d1, v2, ax);
+        pg_eigen_argpos(t1, 1, p1, n1, d1, v2, ax);
     else if (strcasecmp(fn, "argmin") == 0)
-        pg_tensor_argpos(t1, 2, p1, n1, d1, v2, ax);
+        pg_eigen_argpos(t1, 2, p1, n1, d1, v2, ax);
     INSTR_TIME_SET_CURRENT(s2);
     INSTR_TIME_SUBTRACT(s2,s1);
     ereport(LOG,(errmsg("eigen tensor argmax/argmin spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));
@@ -1306,13 +1306,13 @@ Datum array_loss(PG_FUNCTION_ARGS)
 
     INSTR_TIME_SET_CURRENT(s1);
     if (strcasecmp(fn, "MAE") == 0)
-        pg_tensor_loss(t1, 1, (void*) p1, n1, d1, (void*) p2, (void*) v3, ax);
+        pg_eigen_loss(t1, 1, (void*) p1, n1, d1, (void*) p2, (void*) v3, ax);
     else if (strcasecmp(fn, "MSE") == 0)
-        pg_tensor_loss(t1, 2, (void*) p1, n1, d1, (void*) p2, (void*) v3, ax);
+        pg_eigen_loss(t1, 2, (void*) p1, n1, d1, (void*) p2, (void*) v3, ax);
     else if (strcasecmp(fn, "CCE") == 0)
-        pg_tensor_loss(t1, 3, (void*) p1, n1, d1, (void*) p2, (void*) v3, ax);
+        pg_eigen_loss(t1, 3, (void*) p1, n1, d1, (void*) p2, (void*) v3, ax);
     else if (strcasecmp(fn, "SCE") == 0)
-        pg_tensor_loss(t1, 4, (void*) p1, n1, d1, (void*) p2, (void*) v3, ax);
+        pg_eigen_loss(t1, 4, (void*) p1, n1, d1, (void*) p2, (void*) v3, ax);
     INSTR_TIME_SET_CURRENT(s2);
     INSTR_TIME_SUBTRACT(s2,s1);
     ereport(LOG,(errmsg("eigen tensor Loss evaluation spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));
@@ -1535,9 +1535,9 @@ Datum array_unpool(PG_FUNCTION_ARGS)
     memcpy(ARR_LBOUND(a6), ARR_LBOUND(a1), n1 * sizeof(int));
     INSTR_TIME_SET_CURRENT(s1);
     if (strcasecmp(fn, "max") == 0)
-        pg_tensor_unpool(t1, 1, (void*) p1, n1, d1, p2, p3, p4, (void*) p_, d_, (void*) ARR_DATA_PTR(a6));
+        pg_eigen_unpool(t1, 1, (void*) p1, n1, d1, p2, p3, p4, (void*) p_, d_, (void*) ARR_DATA_PTR(a6));
     else if (strcasecmp(fn, "avg") == 0)
-        pg_tensor_unpool(t1, 2, (void*) p1, n1, d1, p2, p3, p4, (void*) p_, d_, (void*) ARR_DATA_PTR(a6));
+        pg_eigen_unpool(t1, 2, (void*) p1, n1, d1, p2, p3, p4, (void*) p_, d_, (void*) ARR_DATA_PTR(a6));
     INSTR_TIME_SET_CURRENT(s2);
     INSTR_TIME_SUBTRACT(s2,s1);
     ereport(LOG,(errmsg("eigen inverse pooling spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));
@@ -1724,7 +1724,7 @@ Datum array_convt(PG_FUNCTION_ARGS)
     memcpy(ARR_LBOUND(a8), ARR_LBOUND(a_), n_ * sizeof(int));
 
     INSTR_TIME_SET_CURRENT(s1);
-    pg_tensor_convt(t1, (void*) p1, n1, d1, (void*) p2, d2, p3, p4, (void*) p_, d_, (void*) ARR_DATA_PTR(a6), (void*) ARR_DATA_PTR(a7), (void*) ARR_DATA_PTR(a8));
+    pg_eigen_convt(t1, (void*) p1, n1, d1, (void*) p2, d2, p3, p4, (void*) p_, d_, (void*) ARR_DATA_PTR(a6), (void*) ARR_DATA_PTR(a7), (void*) ARR_DATA_PTR(a8));
     INSTR_TIME_SET_CURRENT(s2);
     INSTR_TIME_SUBTRACT(s2,s1);
     ereport(LOG,(errmsg("eigen transposed convolution spend time %lu us", INSTR_TIME_GET_MICROSEC(s2))));

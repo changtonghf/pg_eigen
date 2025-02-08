@@ -8,10 +8,10 @@ OBJS = pg_eigen.o eigen_wrap.o
 
 NVCC := $(shell which nvcc)
 ifdef NVCC
-SHLIB_LINK += -L/usr/local/cuda/lib64 -lcudart
-OBJS += eigen_cuda.o
+SHLIB_LINK += -L/usr/local/cuda/lib64 -lcudart -lcudnn
+OBJS += cudnn_wrap.o
 NVCC += -ccbin /usr/bin/g++
-NVCC_FLAGS = -w -g -G -m64 -std=c++11 -Xcompiler -fPIC -DEIGEN_USE_GPU
+NVCC_FLAGS = -w -g -G -m64 -std=c++11 -Xcompiler -fPIC -I/usr/local/cuda/include
 GENCODE_FLAGS += -gencode arch=compute_75,code=sm_75 -gencode arch=compute_75,code=compute_75
 %.o: %.cu
 	$(NVCC) $(NVCC_FLAGS) $(GENCODE_FLAGS) -o $@ -c $<
